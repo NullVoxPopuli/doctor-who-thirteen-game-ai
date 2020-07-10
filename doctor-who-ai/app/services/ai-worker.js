@@ -2,6 +2,8 @@ import Service, { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
 
+import { PWBHost } from 'promise-worker-bi';
+
 import { BOT } from './bot';
 
 export default class AIWorker extends Service {
@@ -29,7 +31,7 @@ export default class AIWorker extends Service {
   }
 
   @action
-  requestMove(state, algorithm) {
+  async requestMove(state, algorithm) {
     if (!this.worker) {
       console.debug('Worker not loaded yet');
       return;
@@ -41,7 +43,7 @@ export default class AIWorker extends Service {
       options.trainingData = this.trainingData;
     }
 
-    this.worker.postMessage(options);
+    return await this.worker.postMessage(options);
   }
 
   @action
@@ -52,23 +54,16 @@ export default class AIWorker extends Service {
       case 'ack':
       case 'ready':
         return this.isReady = true;
-      case 'move':
-        if (!data.move) {
-          console.error(`No move was generated`, data);
-
-          return;
-        }
-
-        if (data.trainingData) {
-          this.trainingData = data.trainingData;
-        }
-
-        return this.game.pressKey(data.move);
       default:
         console.error(data);
         throw new Error('Unrecognized Message');
     }
 
+  }
+
+
+  willDestroy() {
+    this.worker._worker.terminate();
   }
 }
 
@@ -83,5 +78,8 @@ async function createWorker() {
   let script = await response.text();
   let blob = new Blob([script], { type: 'text/javascript' });
 
-  return new Worker(URL.createObjectURL(blob));
+  let worker = new Worker(URL.createObjectURL(blob));
+  let promiseWorker = new PWBHost(worker);
+
+  return promiseWorker;
 }

@@ -2,10 +2,11 @@ import Service, { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { timeout } from 'ember-concurrency';
+import { restartableTask } from 'ember-concurrency-decorators';
 
 export const BOT = {
-  RNN = 'rnn',
-  RANDOM = 'random',
+  RNN: 'rnn',
+  RANDOM: 'random',
 }
 
 export default class Bot extends Service {
@@ -17,7 +18,17 @@ export default class Bot extends Service {
   @tracked currentBot = BOT.RNN;
 
   @action
-  requestMove() {
+  play() {
+    this.gameLoop.perform();
+  }
+
+  @action
+  stop() {
+    this.gameLoop.cancelAll();
+  }
+
+  @action
+  async requestMove() {
     let state = this.game.state;
 
     if (state !== null && !state.over) {
@@ -25,9 +36,36 @@ export default class Bot extends Service {
         this.game.startTime = new Date();
       }
 
-      this.aiWorker.requestMove(state, this.currentBot);
+      let moveData = await this.aiWorker.requestMove(state, this.currentBot);
+
+      return moveData;
     }
   }
+
+  @restartableTask
+  *gameLoop() {
+    while(!this.game.isGameOver) {
+      let data = yield this.requestMove();
+
+      if (!data.move) {
+        console.error(`No move was generated`, data);
+
+        return;
+      }
+
+      if (data.trainingData) {
+        this.aiWorker.trainingData = data.trainingData;
+      }
+
+      this.game.pressKey(data.move);
+
+      // let the external code calculate stuff?
+      yield timeout(50);
+    }
+
+    this.autoRetry();
+  }
+
 
   async autoRetry() {
     if (!this.isAutoRetrying) {
@@ -43,7 +81,7 @@ export default class Bot extends Service {
 
       await timeout(1000);
 
-      this.requestMove();
+      this.play.perform();
     }
   }
 }
