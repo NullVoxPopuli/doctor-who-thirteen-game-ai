@@ -1,0 +1,13 @@
+<div class='ai-buttons grid'>
+  <select {{on 'change' this.selectAlogrithm}}>
+    <option value='rnn'>Reinforcment Learning Neural Network</option>
+    <option value='random'>Random</option>
+  </select>
+
+  <button type='button' {{on 'click' this.start}}>Start</button>
+  <button type='button' {{on 'click' this.stop}}>Stop</button>
+
+  <label>
+    <input type='checkbox' {{on 'click' this.toggleAutoRetry}}> Auto-Retry
+  </label>
+</div>
