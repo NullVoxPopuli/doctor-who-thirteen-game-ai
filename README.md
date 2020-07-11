@@ -23,7 +23,20 @@ Play the game "Thirteen" here: https://doctorwho.tv/games/thirteen/
 
 ## Development
 
+### A.I.
+
+1. clone the repo
+2. `cd docker-who-ai`
+3. `yarn && yarn start`
+4. This starts a development environment with a local copy of the game
+
+### Bookmarklet
+
 1. clone the repo
 2. change the bookmarklet URL to your fork/branch
 3. copy contents of bookmarklet.js to https://ted.mielczarek.org/code/mozilla/bookmarklet.html
 4. copy "Your Bookmarklet" url to your bookmark
+
+## Resources
+
+- [2048 NN A.I.](https://tjwei.github.io/2048-NN/) - [source](https://github.com/tjwei/2048-NN)
