@@ -342,7 +342,8 @@ async function runReImprove(game, trainingData) {
     while (!gameManager.over || moves > 10000) {
       moves++;
       let move = await getMove(gameManager);
-      let reward = calculateReward(move, gameManager);
+      let internalMove = ALL_MOVES.indexOf(move);
+      let reward = calculateReward(internalMove, gameManager);
 
       _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);    
 
