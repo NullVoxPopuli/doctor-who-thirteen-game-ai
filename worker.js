@@ -85,13 +85,19 @@ function fakeGameFrom(model) {
   return gameManager;
 }
 
-function imitateMove(model, move) {
-  let gameManager = fakeGameFrom(model);
+function executeMove(gameManager, move) {
   let internalMove = MOVE_KEY_MAP[move];
 
   gameManager.actuate = voidFn;
   gameManager.keepPlaying = true;
   gameManager.move(internalMove);
+
+}
+
+function imitateMove(model, move) {
+  let gameManager = fakeGameFrom(model);
+ 
+  executeMove(gameManager, move);
 
   let serialized = gameManager.serialize();
 
@@ -307,7 +313,7 @@ async function runReImprove(game, trainingData) {
     return { model, academy, agent, teacher };
   }
  
-  async function getMove() {
+  async function getMove(game) {
     let inputs = gameTo1DArray(game);
 
     let result = await _reImprove.academy.step([               // Let the magic operate ...
@@ -316,9 +322,6 @@ async function runReImprove(game, trainingData) {
 
     let moveIndex = result.get(_reImprove.agent);
     let move = ALL_MOVES[moveIndex];
-    let reward = calculateReward(move, game);
-
-    _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);
 
     return move;
   }
@@ -327,16 +330,37 @@ async function runReImprove(game, trainingData) {
     Object.assign(_reImprove, createNetwork());
   }
 
-  console.debug(`Training ${iterations}->${iterations + 200} iterations...`);
-  for (let i = 0; i < 200; i++) {
-    await getMove();
-  }
-  iterations += 200;
+  async function trainABit(originalGame) {
+    console.debug('Running the game to completion...');
+    let moves = 0;
+    // copy the game
+    // run to completion
+    let clonedGame = clone(originalGame);
+    let gameManager = fakeGameFrom(clonedGame);
 
+
+    while (!gameManager.over || moves > 10000) {
+      moves++;
+      let move = await getMove(gameManager);
+      let reward = calculateReward(move, gameManager);
+
+      _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);    
+
+      executeMove(gameManager, move);
+    }
+
+    console.debug(`Game took ${moves} to complete... (or aborted at 10000 moves)`);
+  
+  }
+
+  let move = await getMove(game);
+  let reward = calculateReward(move, game);
+
+  _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);
 
   self.postMessage({ 
     type: 'move', 
-    move: await getMove(), 
+    move,
     // trainingData: rnn.toJSON() 
   });
 }
