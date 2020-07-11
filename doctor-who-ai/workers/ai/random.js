@@ -6,5 +6,5 @@ export function run() {
 
   let move = ALL_MOVES[moveIndex];
 
-  self.postMessage({ type: 'move', move });
+  self.postMessage({ move });
 }

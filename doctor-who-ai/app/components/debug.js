@@ -15,23 +15,29 @@ export default class Debug extends Component {
 
 async function setupLocalGame() {
   if (DEBUG) {
-    let css = 'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/game-backup/dist/css/main.min.css';
-    let js = 'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/game-backup/dist/js/app.min.css';
+    let iframe = document.createElement('iframe');
 
-    async function installFile(url, type = 'script') {
-      // fetching the URL instead of directly loading in a script
-      // tag allows us to get around CORS issues
-      let response = await fetch(url);
-      let script = await response.text();
+    iframe.src = '/game-backup/index.html';
 
-      let element = document.createElement(type);
+    document.body.appendChild(iframe);
 
-      element.innerHTML = script;
+    // let css = 'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/game-backup/dist/css/main.min.css';
+    // let js = 'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/game-backup/dist/js/app.min.css';
 
-      document.body.appendChild(element);
-    }
+    // async function installFile(url, type = 'script') {
+    //   // fetching the URL instead of directly loading in a script
+    //   // tag allows us to get around CORS issues
+    //   let response = await fetch(url);
+    //   let script = await response.text();
 
-    await installFile(css);
-    await installFile(js);
+    //   let element = document.createElement(type);
+
+    //   element.innerHTML = script;
+
+    //   document.body.appendChild(element);
+    // }
+
+    // await installFile(css);
+    // await installFile(js);
   }
 }
