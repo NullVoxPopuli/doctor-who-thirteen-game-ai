@@ -373,26 +373,26 @@ function treeAI(model) {
       hops++;
     }
 
-    if (hops < bestHops) {
-      if (hops === 0) {
+    // if (hops < bestHops) {
+    //   if (hops === 0) {
         if (childNode.weightedScore > bestScore) {
           bestNode = root;
           bestScore = childNode.weightedScore;
         }
 
         return;
-      }
+    //   }
 
-      bestHops = hops;
-      bestNode = root;
-      bestScore = childNode.weightedScore;
-    }
+    //   bestHops = hops;
+    //   bestNode = root;
+    //   bestScore = childNode.weightedScore;
+    // }
   }
 
   function expandTree(node, level) {
     updateBest(node);
 
-    if (level >= 7) {
+    if (level >= 6) {
       return;
     }
 
@@ -414,7 +414,9 @@ function treeAI(model) {
 
         // let weightedScore = scoreChange / 1 / ((level + 1) * multiplier);
 
-        let weightedScore = scoreChange;
+        let weightedScore = level === 0 ? scoreChange : scoreChange / level;
+
+        // weightedScore = weightedScore * calculateReward(move, node.value.model);
 
         node.children.push({
           // penalize scores with higher depth
