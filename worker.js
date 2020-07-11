@@ -314,7 +314,7 @@ async function runReImprove(game, trainingData) {
 
     _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);
 
-    return action;
+    return move;
   }
 
   if (!_reImprove.agent) {
