@@ -184,7 +184,7 @@ const calculateReward = (move, originalGame, currentGame) => {
     moveData = {
       model: currentGame,
       score: currentGame.score,
-      wasMazed: !isEqual(
+      wasMoved: !isEqual(
         currentGame.serialize().grid.cells,
         originalGame.grid.cells,
       ),
