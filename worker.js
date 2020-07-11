@@ -3,6 +3,7 @@
 const dependencies = [
   'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/vendor/rl.js',
   'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/vendor/game.js',
+  'https://cdn.jsdelivr.net/npm/reimprovejs@0/dist/reimprove.js'
 ];
 
 const MOVE = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40 };
@@ -234,6 +235,108 @@ const calculateReward = (move, originalGame) => {
 };
 
 async function runRNN(game, trainingData) {
+  // return runRL(game, trainingData);
+  return runReImprove(game, trainingData);
+}
+
+let _reImprove = {};
+
+async function runReImprove(game, trainingData) {
+  Object.freeze(game.grid);
+
+  function createNetwork() {
+    const modelFitConfig = {              // Exactly the same idea here by using tfjs's model's
+        epochs: 1,                        // fit config.
+        stepsPerEpoch: 16
+      };
+
+    const numActions = 4;                 // The number of actions your agent can choose to do
+    const inputSize = 16;                // Inputs size (10x10 image for instance)
+    const temporalWindow = 1;             // The window of data which will be sent yo your agent
+                                          // For instance the x previous inputs, and what actions the agent took
+
+    const totalInputSize = inputSize * temporalWindow + numActions * temporalWindow + inputSize;
+
+    const network = new ReImprove.NeuralNetwork();
+    network.InputShape = [totalInputSize];
+    network.addNeuralNetworkLayers([
+        {type: 'dense', units: 32, activation: 'relu'},
+        {type: 'dense', units: numActions, activation: 'softmax'}
+    ]);
+    // Now we initialize our model, and start adding layers
+    const model = new ReImprove.Model.FromNetwork(network, modelFitConfig);
+
+    // Finally compile the model, we also exactly use tfjs's optimizers and loss functions
+    // (So feel free to choose one among tfjs's)
+    model.compile({loss: 'meanSquaredError', optimizer: 'sgd'})
+
+    // Every single field here is optionnal, and has a default value. Be careful, it may not
+    // fit your needs ...
+
+    const teacherConfig = {
+      lessonsQuantity: 10000,                  
+      lessonLength: 20,                    
+      lessonsWithRandom: 0,                  // We do not care about full random sessions
+      epsilon: 0.5,                            // Maybe a higher random rate at the beginning ?
+      epsilonDecay: 0.995,                   
+      epsilonMin: 0.05,
+      gamma: 0.9                            
+    };
+
+    const agentConfig = {
+      model: model,                          // Our model corresponding to the agent
+      agentConfig: {
+          memorySize: 1000,                      // The size of the agent's memory (Q-Learning)
+          batchSize: 128,                        // How many tensors will be given to the network when fit
+          temporalWindow: temporalWindow         // The temporal window giving previous inputs & actions
+      }
+    };
+
+    const academy = new ReImprove.Academy();    // First we need an academy to host everything
+    const teacher = academy.addTeacher(teacherConfig);
+    const agent = academy.addAgent(agentConfig);
+
+    academy.assignTeacherToAgent(agent, teacher);
+
+    return { model, academy, agent, teacher };
+  }
+ 
+  async function getMove() {
+    let inputs = gameTo1DArray(game);
+
+
+    var result = await academy.step([               // Let the magic operate ...
+        { teacherName: _reImprove.teacher, agentsInput: inputs }
+    ]);
+
+
+    let moveIndex = result.get(agent);
+    let move = ALL_MOVES[moveIndex];
+    let reward = calculateReward(move, game);
+
+    academy.addRewardToAgent(agent, reward);
+
+    return action;
+  }
+
+  if (!_reImprove.agent) {
+    Object.assign(_reImprove, createNetwork());
+  }
+
+
+  self.postMessage({ 
+    type: 'move', 
+    move, 
+    // trainingData: rnn.toJSON() 
+  });
+}
+
+
+
+
+
+
+async function runRL(game, trainingData) {
   Object.freeze(game.grid);
 
   if (!rnn) {
