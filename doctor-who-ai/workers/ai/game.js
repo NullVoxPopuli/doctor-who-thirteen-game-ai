@@ -28,18 +28,24 @@ export function imitateMove(model, move) {
 
 function fakeGameFrom(model) {
   class FakeInputManager {
-    on = voidFn;
+    constructor() {
+      this.on = voidFn;
+    }
   }
 
   class FakeActuator {
-    actuate = voidFn;
+    constructor() {
+      this.actuate = voidFn;
+    }
   }
 
   class FakeStorage {
-    getGameState = () => model;
-    clearGameState = voidFn;
-    getBestScore = voidFn;
-    setGameState = voidFn;
+    constructor() {
+      this.getGameState = () => model;
+      this.clearGameState = voidFn;
+      this.getBestScore = voidFn;
+      this.setGameState = voidFn;
+    }
   }
 
   let gameManager = new GameManager(
