@@ -353,6 +353,8 @@ async function runReImprove(game, trainingData) {
   
   }
 
+  await trainABit(game);
+
   let move = await getMove(game);
   let reward = calculateReward(move, game);
 
