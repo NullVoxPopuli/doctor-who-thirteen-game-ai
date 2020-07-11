@@ -250,7 +250,7 @@ async function runReImprove(game, trainingData) {
         stepsPerEpoch: 16
       };
 
-    const numActions = 4;                 // The number of actions your agent can choose to do
+    const numActions = 3; // (including 0?)                 // The number of actions your agent can choose to do
     const inputSize = 16;                // Inputs size (10x10 image for instance)
     const temporalWindow = 1;             // The window of data which will be sent yo your agent
                                           // For instance the x previous inputs, and what actions the agent took
