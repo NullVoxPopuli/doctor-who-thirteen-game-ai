@@ -172,9 +172,24 @@ function createRnn() {
   return new RL.DQNAgent(env, spec);
 }
 
-const calculateReward = (move, originalGame) => {
-  let clonedGame = clone(originalGame);
-  let moveData = imitateMove(clonedGame, move);
+const calculateReward = (move, originalGame, currentGame) => {
+  let moveData;
+  let clonedGame;
+
+  if (!currentGame) {
+    clonedGame = clone(originalGame);
+    moveData = imitateMove(clonedGame, move);
+  } else {
+    clonedGame = currentGame;
+    moveData = {
+      model: currentGame,
+      score: currentGame.score,
+      wasMazed: !isEqual(
+        currentGame.serialize().grid.cells,
+        originalGame.grid.cells,
+      ),
+    };
+  }
 
   if (clonedGame.over) {
     if (clonedGame.won) {
@@ -341,13 +356,16 @@ async function runReImprove(game, trainingData) {
 
     while (!gameManager.over || moves > 10000) {
       moves++;
+      let previousGame = clone(gameManager);
       let move = await getMove(gameManager);
+
+      executeMove(gameManager, move);
+
       let internalMove = MOVE_KEY_MAP[move];
-      let reward = calculateReward(internalMove, gameManager);
+      let reward = calculateReward(internalMove, previousGame, gameManager);
 
       _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);    
 
-      executeMove(gameManager, move);
     }
 
     console.debug(`Game took ${moves} to complete... (or aborted at 10000 moves)`);
