@@ -198,7 +198,7 @@ const calculateReward = (move, originalGame) => {
   // highest first
   let currentValues = Object.keys(newGrouped).sort((a, b) => b - a);
 
-  let likelyWontMakeItTo = 30; // 2 ^ 30 -- need an upper bound for rewarding
+  let likelyWontMakeItTo = 15; // 2 ^ 30 -- need an upper bound for rewarding
 
   for (let value of currentValues) {
     // what if it previously didn't exist? but still isn't highest?
@@ -240,6 +240,7 @@ async function runRNN(game, trainingData) {
 }
 
 let _reImprove = {};
+let iterations = 0;
 
 async function runReImprove(game, trainingData) {
   Object.freeze(game.grid);
@@ -325,6 +326,12 @@ async function runReImprove(game, trainingData) {
   if (!_reImprove.agent) {
     Object.assign(_reImprove, createNetwork());
   }
+
+  console.debug(`Training ${iterations}->${iterations + 200} iterations...`);
+  for (let i = 0; i < 200; i++) {
+    await getMove();
+  }
+  iterations += 200;
 
 
   self.postMessage({ 
