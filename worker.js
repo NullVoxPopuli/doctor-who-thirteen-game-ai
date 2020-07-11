@@ -280,7 +280,7 @@ async function runReImprove(game, trainingData) {
     const teacherConfig = {
       lessonsQuantity: 10000,                  
       lessonLength: 20,                    
-      lessonsWithRandom: 0,                  // We do not care about full random sessions
+      lessonsWithRandom: 10,                  // We do not care about full random sessions
       epsilon: 0.5,                            // Maybe a higher random rate at the beginning ?
       epsilonDecay: 0.995,                   
       epsilonMin: 0.05,
