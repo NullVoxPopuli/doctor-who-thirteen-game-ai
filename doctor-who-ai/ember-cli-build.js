@@ -7,8 +7,7 @@ const UnwatchedDir = require('broccoli-source').UnwatchedDir;
 
 const { EMBROIDER, CONCAT_STATS } = process.env;
 
-module.exports = function(defaults) {
-
+module.exports = function (defaults) {
   let environment = EmberApp.env();
   let isProduction = environment === 'production';
 
@@ -19,7 +18,8 @@ module.exports = function(defaults) {
     isTest: environment === 'test',
     version,
     CONCAT_STATS,
-  }
+    EMBROIDER,
+  };
 
   console.log(env);
 
@@ -35,7 +35,7 @@ module.exports = function(defaults) {
     fingerprint: {
       // need stable URL for bookmarklet to load
       enabled: false,
-    }
+    },
   });
 
   app.trees.public = new UnwatchedDir('public');

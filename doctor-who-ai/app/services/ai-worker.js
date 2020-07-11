@@ -23,6 +23,7 @@ export default class AIWorker extends Service {
   async requestMove(state, algorithm) {
     if (!this.worker) {
       console.debug('Worker not loaded yet');
+
       return;
     }
 
@@ -42,20 +43,17 @@ export default class AIWorker extends Service {
     switch (data.type) {
       case 'ack':
       case 'ready':
-        return this.isReady = true;
+        return (this.isReady = true);
       default:
         console.error(data);
         throw new Error('Unrecognized Message');
     }
-
   }
-
 
   willDestroy() {
     this.worker._worker.terminate();
   }
 }
-
 
 // const workerUrl =
 //   'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/worker.js';

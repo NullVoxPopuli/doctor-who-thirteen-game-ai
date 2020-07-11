@@ -15,18 +15,18 @@ export default class GameHistory extends Service {
   @tracked history = [];
 
   // TODO: replace with @cached
-  @computed('history')
+  @computed('history.length')
   get latest() {
     return {
       ...(this.history[this.history.length - 1] || INITIAL),
-      bestScore: Math.max(...(this.history.map(h => h.score))),
-    }
+      bestScore: Math.max(...this.history.map((h) => h.score)),
+    };
   }
 
   @action
   addGame({ score, time }) {
-    let scores = [...this.history.map(h => h.score), score];
-    let times = [...this.history.map(h => h.time), time];
+    let scores = [...this.history.map((h) => h.score), score];
+    let times = [...this.history.map((h) => h.time), time];
 
     this.history.push({
       score,
@@ -46,7 +46,6 @@ export default class GameHistory extends Service {
       Math.max(this.history.length - HISTORY_SIZE, 0)
     );
   }
-
 }
 
 function average(numbers) {

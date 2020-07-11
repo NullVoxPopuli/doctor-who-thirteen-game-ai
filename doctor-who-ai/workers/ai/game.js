@@ -1,4 +1,8 @@
-import { voidFn } from './utils';
+/* global GameManager */
+// ^ externally loaded
+
+import { MOVE_KEY_MAP } from './consts';
+import { voidFn, isEqual } from './utils';
 
 export function imitateMove(model, move) {
   let gameManager = fakeGameFrom(model);
@@ -22,8 +26,7 @@ export function imitateMove(model, move) {
   };
 }
 
-
-export function fakeGameFrom(model) {
+function fakeGameFrom(model) {
   class FakeInputManager {
     on = voidFn;
   }
@@ -48,4 +51,3 @@ export function fakeGameFrom(model) {
 
   return gameManager;
 }
-

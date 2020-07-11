@@ -4,7 +4,7 @@ import loadInitializers from 'ember-load-initializers';
 import config from './config/environment';
 
 export default class App extends Application {
-  rootElement = '#ai-mount-point'
+  rootElement = '#ai-mount-point';
   modulePrefix = config.modulePrefix;
   podModulePrefix = config.podModulePrefix;
   Resolver = Resolver;

@@ -1,6 +1,6 @@
-
 export const voidFn = () => undefined;
 export const clone = (obj) => JSON.parse(JSON.stringify(obj));
+
 export const isEqual = (a, b) => {
   // a and b have the same dimensions
   for (let i = 0; i < a.length; i++) {
@@ -33,7 +33,7 @@ export const groupByValue = (game) => {
   }, {});
 };
 
-async function loadDependencies(dependencies) {
+export async function loadDependencies(dependencies) {
   await Promise.all(
     dependencies.map(async (depUrl) => {
       let response = await fetch(depUrl);

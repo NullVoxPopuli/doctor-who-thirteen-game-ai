@@ -1,4 +1,3 @@
-
 export const VALUE_MAP = {
   /* eslint-disable prettier/prettier */
   2:     1, 4:      2, 8:      3, 16:    4,
@@ -38,4 +37,3 @@ export function biggestTile(game) {
 export function round(num) {
   return Math.round(num * 100) / 100;
 }
-

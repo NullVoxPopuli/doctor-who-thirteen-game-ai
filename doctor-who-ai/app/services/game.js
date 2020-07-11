@@ -1,4 +1,5 @@
 import Service from '@ember/service';
+import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 
 export default class Game extends Service {
@@ -9,10 +10,7 @@ export default class Game extends Service {
   }
 
   get score() {
-    return parseInt(
-      document.querySelector('.score-container').textContent,
-      10
-    );
+    return parseInt(document.querySelector('.score-container').textContent, 10);
   }
 
   get state() {
@@ -24,7 +22,7 @@ export default class Game extends Service {
     return {
       score: this.score,
       time: new Date() - this.startTime,
-    }
+    };
   }
 
   startNewGame() {
@@ -40,29 +38,27 @@ export default class Game extends Service {
 }
 
 function simulateKeyPress(k) {
-    let oEvent = document.createEvent('KeyboardEvent');
+  let oEvent = document.createEvent('KeyboardEvent');
 
-    function defineConstantGetter(name, value) {
-      Object.defineProperty(oEvent, name, {
-        get() {
-          return value;
-        },
-      });
-    }
+  function defineConstantGetter(name, value) {
+    Object.defineProperty(oEvent, name, {
+      get() {
+        return value;
+      },
+    });
+  }
 
-    defineConstantGetter('keyCode', k);
-    defineConstantGetter('which', k);
-    defineConstantGetter('metaKey', false);
-    defineConstantGetter('shiftKey', false);
-    defineConstantGetter('target', { tagName: '' });
+  defineConstantGetter('keyCode', k);
+  defineConstantGetter('which', k);
+  defineConstantGetter('metaKey', false);
+  defineConstantGetter('shiftKey', false);
+  defineConstantGetter('target', { tagName: '' });
 
-    /* eslint-disable */
+  /* eslint-disable */
     oEvent.initKeyboardEvent('keydown',
       true, true, document.defaultView, false, false, false, false, k, k
     );
     /* eslint-enable */
 
-    document.dispatchEvent(oEvent);
-
-
+  document.dispatchEvent(oEvent);
 }

@@ -5,7 +5,7 @@ import { run as random } from './ai/random';
 
 export default class AIWorker extends Worker {
   @method
-  runRNN({ game, trainingData}) {
+  runRNN({ game, trainingData }) {
     return rnn(game, trainingData);
   }
 

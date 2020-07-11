@@ -1,6 +1,9 @@
+/* global RL */
+// ^ externally loaded
+
 import { ALL_MOVES } from './consts';
 import { clone, groupByValue, loadDependencies, gameTo1DArray } from './utils';
-import { imitateMove, fakeGameFrom } from './game';
+import { imitateMove } from './game';
 
 let areRNNDependenciesLoaded = false;
 let rnn;
@@ -42,8 +45,6 @@ async function getMove(game, trainingData) {
 
   return { move, trainingData: rnn.toJSON() };
 }
-
-
 
 const calculateReward = (move, originalGame) => {
   let clonedGame = clone(originalGame);

@@ -7,7 +7,7 @@ import { restartableTask } from 'ember-concurrency-decorators';
 export const BOT = {
   RNN: 'rnn',
   RANDOM: 'random',
-}
+};
 
 export default class Bot extends Service {
   @service aiWorker;
@@ -44,7 +44,7 @@ export default class Bot extends Service {
 
   @restartableTask
   *gameLoop() {
-    while(!this.game.isGameOver) {
+    while (!this.game.isGameOver) {
       let data = yield this.requestMove();
 
       if (!data.move) {
@@ -65,7 +65,6 @@ export default class Bot extends Service {
 
     this.autoRetry();
   }
-
 
   async autoRetry() {
     if (!this.isAutoRetrying) {
