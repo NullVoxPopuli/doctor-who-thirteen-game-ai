@@ -260,8 +260,12 @@ async function runReImprove(game, trainingData) {
     const network = new ReImprove.NeuralNetwork();
     network.InputShape = [totalInputSize];
     network.addNeuralNetworkLayers([
-        {type: 'dense', units: 32, activation: 'relu'},
-        {type: 'dense', units: numActions, activation: 'softmax'}
+      {type: 'dense', units: Math.pow(2, 12), activation: 'relu'},
+      {type: 'dense', units: Math.pow(2, 10), activation: 'relu'},
+      {type: 'dense', units: Math.pow(2, 8), activation: 'relu'},
+      {type: 'dense', units: Math.pow(2, 6), activation: 'relu'},
+      {type: 'dense', units: Math.pow(2, 4), activation: 'relu'},
+      {type: 'dense', units: numActions, activation: 'softmax'}
     ]);
     // Now we initialize our model, and start adding layers
     const model = new ReImprove.Model.FromNetwork(network, modelFitConfig);
