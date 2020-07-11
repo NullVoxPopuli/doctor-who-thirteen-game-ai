@@ -304,17 +304,15 @@ async function runReImprove(game, trainingData) {
   async function getMove() {
     let inputs = gameTo1DArray(game);
 
-
-    var result = await academy.step([               // Let the magic operate ...
+    let result = await _reImprove.academy.step([               // Let the magic operate ...
         { teacherName: _reImprove.teacher, agentsInput: inputs }
     ]);
 
-
-    let moveIndex = result.get(agent);
+    let moveIndex = result.get(_reImprove.agent);
     let move = ALL_MOVES[moveIndex];
     let reward = calculateReward(move, game);
 
-    academy.addRewardToAgent(agent, reward);
+    _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);
 
     return action;
   }
