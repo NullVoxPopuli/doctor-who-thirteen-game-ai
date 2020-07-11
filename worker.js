@@ -326,7 +326,7 @@ async function runReImprove(game, trainingData) {
 
   self.postMessage({ 
     type: 'move', 
-    move, 
+    move: await getMove(), 
     // trainingData: rnn.toJSON() 
   });
 }
