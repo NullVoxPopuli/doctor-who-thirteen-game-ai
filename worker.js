@@ -427,7 +427,6 @@ function treeAI(model) {
           value: moveData,
           children: [],
           move: move,
-          moveName: MOVE_NAMES_MAP[move],
           parent: node,
         });
       }
