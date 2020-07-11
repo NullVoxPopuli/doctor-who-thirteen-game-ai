@@ -333,6 +333,148 @@ async function runReImprove(game, trainingData) {
   });
 }
 
+/**
+ * Initially, this started out as an A* algorithm, constrained by depth
+ *  - original version from https://github.com/nloginov/2048-ai
+ *
+ * Modifications:
+ * - use weighted score, penalizing a higher number of moves to achieve a score
+ * - instead of blindly searching until maxLevel,
+ *   maxLevel will only be reached in the event of ties in score
+ *
+ */
+function treeAI(model) {
+  let bestNode;
+  let treeSize = 0;
+  let bestScore = 0;
+  let bestHops = 1000;
+
+  let rootNode = {
+    value: { model },
+    children: [],
+  };
+
+  function updateBest(childNode) {
+    if (childNode === rootNode) {
+      return;
+    }
+
+    if (childNode.weightedScore < bestScore) {
+      return;
+    }
+
+    // if the score is equal, let's choose the least hops
+
+    let root = childNode;
+    let hops = 0;
+
+    while (root.parent !== undefined && root.parent.move) {
+      root = root.parent;
+      hops++;
+    }
+
+    if (hops < bestHops) {
+      if (hops === 0) {
+        if (childNode.weightedScore > bestScore) {
+          bestNode = root;
+          bestScore = childNode.weightedScore;
+        }
+
+        return;
+      }
+
+      bestHops = hops;
+      bestNode = root;
+      bestScore = childNode.weightedScore;
+    }
+  }
+
+  function expandTree(node, level) {
+    updateBest(node);
+
+    if (level >= 7) {
+      return;
+    }
+
+    const enumerateMoves = () => {
+      for (let move of ALL_MOVES) {
+        let copyOfModel = clone(node.value);
+        let moveData = imitateMove(copyOfModel.model, move);
+
+        if (!moveData.wasMoved) {
+          continue;
+        }
+
+        treeSize++;
+
+        let scoreChange = moveData.score - model.score;
+
+        // this is a very important strategy
+        // let multiplier = edgeMultiplierFor(moveData.model);
+
+        // let weightedScore = scoreChange / 1 / ((level + 1) * multiplier);
+
+        let weightedScore = scoreChange;
+
+        node.children.push({
+          // penalize scores with higher depth
+          // this takes the nth root of the score where n is the number of moves
+          // weightedScore: moveData.score, //Math.pow(moveData.score, 1 / (level + 1)),
+          // weightedScore: moveData.score / 1 / (level * 2 + 1),
+          // weightedScore: moveData.score,
+          weightedScore,
+
+          value: moveData,
+          children: [],
+          move: move,
+          moveName: MOVE_NAMES_MAP[move],
+          parent: node,
+        });
+      }
+    };
+
+    // to try to account for misfortune
+    enumerateMoves();
+    // enumerateMoves();
+    // enumerateMoves();
+
+    for (let childNode of node.children) {
+      expandTree(childNode, level + 1);
+    }
+  }
+
+  let initialLevel = 0;
+
+  while (bestNode === undefined || initialLevel < -3) {
+    expandTree(rootNode, initialLevel);
+
+    initialLevel = initialLevel - 1;
+  }
+
+  let bestMove = bestNode.move;
+
+  // console.debug(
+  //   `Best Move: ${bestMove} aka ${MOVE_NAMES_MAP[bestMove]} out of ${treeSize} options`
+  // );
+  // console.debug(
+  //   `with expected score change of ${model.score} => ${bestNode.value.model.score}`
+  // );
+
+  return bestMove;
+}
+
+function runAStar(game, maxLevel) {
+  Object.freeze(game.grid);
+
+  console.debug('-------------- Calculate Move -----------------');
+  let initialTime = new Date();
+
+  let move = treeAI(game, Math.max(maxLevel, 4));
+
+  console.debug(`Time: ${new Date() - initialTime}ms`);
+
+  self.postMessage({ type: 'move', move });
+}
 
 
 
@@ -376,6 +518,8 @@ function run({ game, algorithm, trainingData }) {
       return runRNN(game, trainingData);
     case 'random':
       return random();
+    case 'a-star':
+      return runAStar(game, 6);
     default:
       console.error(...arguments);
       throw new Error('Unrecognized Algorithm', algorithm);

@@ -292,14 +292,21 @@ class UI {
               children: [
                 createElement('button', {
                   type: 'button',
-                  template: 'Run A.I. (Random)',
+                  template: 'Run (Random)',
                   events: {
                     click: () => this.runAI('random'),
                   },
                 }),
                 createElement('button', {
                   type: 'button',
-                  template: 'Run A.I. (RNN)',
+                  template: 'Run (A*)',
+                  events: {
+                    click: () => this.runAI('a-star'),
+                  }
+                }),
+                createElement('button', {
+                  type: 'button',
+                  template: 'Run (RNN)',
                   events: {
                     click: () => this.runAI('RNN'),
                   },
