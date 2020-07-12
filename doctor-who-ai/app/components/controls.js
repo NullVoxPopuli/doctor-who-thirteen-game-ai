@@ -2,7 +2,6 @@ import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 
-
 import { OPTIONS } from 'doctor-who-ai/services/bot';
 
 export default class Controls extends Component {

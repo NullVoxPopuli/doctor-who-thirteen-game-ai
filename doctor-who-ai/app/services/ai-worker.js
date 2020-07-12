@@ -6,6 +6,8 @@ import { tracked } from '@glimmer/tracking';
 
 // import { BOT } from './bot';
 
+import { runReImprove as getMove, train100Games } from './ai/rnn-reimprove';
+
 export default class AIWorker extends Service {
   @service game;
   // @worker('ai') worker;
@@ -17,6 +19,11 @@ export default class AIWorker extends Service {
   }
   set trainingData(value) {
     localStorage.setItem('training', JSON.stringify(value));
+  }
+
+  @action
+  async train(seedGame) {
+    await train100Games(seedGame);
   }
 
   @action
@@ -34,12 +41,14 @@ export default class AIWorker extends Service {
     // }
 
     // return await this.worker.postMessage(options);
+    let move = await getMove(state);
+
+    return { move };
   }
 
   @action
   onMessage(e) {
     // let { data } = e;
-
     // switch (data.type) {
     //   case 'ack':
     //   case 'ready':

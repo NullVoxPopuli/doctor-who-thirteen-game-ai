@@ -23,9 +23,17 @@ export default class GameHistory extends Service {
     };
   }
 
+  get scores() {
+    return this.history.map((h) => h.score);
+  }
+
+  get averageScores() {
+    return this.history.map((h) => h.averageScore);
+  }
+
   @action
   addGame({ score, time }) {
-    let scores = [...this.history.map((h) => h.score), score];
+    let scores = [...this.scores, score];
     let times = [...this.history.map((h) => h.time), time];
 
     this.history.push({

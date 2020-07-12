@@ -36,11 +36,19 @@ module.exports = function (defaults) {
       // need stable URL for bookmarklet to load
       enabled: false,
     },
+    autoImport: {
+      alias: {
+        // the "main" entry is incorrect for this package
+        reimprovejs: 'reimprovejs/dist/reimprove.js',
+      },
+    },
   });
 
   app.trees.public = new UnwatchedDir('public');
   app.trees.vendor = new UnwatchedDir('public');
   app.trees.dist = new UnwatchedDir('public');
+
+  app.import('node_modules/chartist-plugin-legend/chartist-plugin-legend.js');
 
   return mergeTrees([app.toTree()]);
 };

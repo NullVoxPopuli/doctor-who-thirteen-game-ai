@@ -1,1 +1,6 @@
-<div class='ai-score-over-time'></div>
+<ChartistChart
+  class='ai-score-over-time'
+  @type="line"
+  @data={{this.chartData}}
+  @options={{this.options}}
+/>

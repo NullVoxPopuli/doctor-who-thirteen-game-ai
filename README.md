@@ -27,3 +27,8 @@ Play the game "Thirteen" here: https://doctorwho.tv/games/thirteen/
 2. change the bookmarklet URL to your fork/branch
 3. copy contents of bookmarklet.js to https://ted.mielczarek.org/code/mozilla/bookmarklet.html
 4. copy "Your Bookmarklet" url to your bookmark
+
+
+## Resources
+
+https://blog.logrocket.com/ai-in-browsers-comparing-tensorflow-onnx-and-webdnn-for-image-classification/

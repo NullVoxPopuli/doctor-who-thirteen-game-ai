@@ -5,7 +5,7 @@
   grid-auto-flow: column;
 }
 .ai-container {
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 500px 1fr;
   position: fixed; top: 0.5rem; left: 0.5rem; right: 0.5rem;
   background: white; color: black;
   padding: 0.5rem;
@@ -13,6 +13,11 @@
   border-radius: 0.25rem;
   font-size: 0.75rem;
   z-index: 1;
+  /* max-height: 8rem; */
+}
+
+.ai-container .info {
+  grid-template-rows: auto 1fr;
 }
 
 .ai-buttons {
@@ -22,6 +27,7 @@
 .ai-score-over-time {
   display: flex;
   flex-direction: column-reverse;
+  max-height: 8rem;
 }
 
 .ct-legend {

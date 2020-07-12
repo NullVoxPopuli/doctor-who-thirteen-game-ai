@@ -49,6 +49,8 @@ export default class Bot extends Service {
 
   @restartableTask
   *gameLoop() {
+    yield this.aiWorker.train(this.game.state);
+
     while (!this.game.isGameOver) {
       let data = yield this.requestMove();
 
@@ -71,6 +73,7 @@ export default class Bot extends Service {
     this.autoRetry();
   }
 
+  @action
   async autoRetry() {
     if (!this.isAutoRetrying) {
       return;
@@ -79,13 +82,13 @@ export default class Bot extends Service {
     if (this.game.isGameOver) {
       let stats = this.game.snapshot();
 
-      this.history.add(stats);
+      this.history.addGame(stats);
 
       this.game.startNewGame();
 
       await timeout(1000);
 
-      this.play.perform();
+      this.play();
     }
   }
 }
