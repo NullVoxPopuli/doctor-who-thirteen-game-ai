@@ -305,7 +305,7 @@ async function runReImprove(game, trainingData) {
     const teacherConfig = {
       lessonsQuantity: 10000,                  
       lessonLength: 20,                    
-      lessonsWithRandom: 10,                  // We do not care about full random sessions
+      lessonsWithRandom: 20,                  // We do not care about full random sessions
       epsilon: 0.5,                            // Maybe a higher random rate at the beginning ?
       epsilonDecay: 0.995,                   
       epsilonMin: 0.05,
@@ -316,7 +316,7 @@ async function runReImprove(game, trainingData) {
       model: model,                          // Our model corresponding to the agent
       agentConfig: {
           memorySize: 1000,                      // The size of the agent's memory (Q-Learning)
-          batchSize: 128,                        // How many tensors will be given to the network when fit
+          batchSize: 16,                        // How many tensors will be given to the network when fit
           temporalWindow: temporalWindow         // The temporal window giving previous inputs & actions
       }
     };
