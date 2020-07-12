@@ -1,5 +1,5 @@
 /* global importScripts, RL, GameManager */
-
+const window = {};
 const dependencies = [
   'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/vendor/rl.js',
   'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/vendor/game.js',
