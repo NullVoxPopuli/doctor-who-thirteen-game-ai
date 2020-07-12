@@ -9,6 +9,11 @@ export const BOT = {
   RANDOM: 'random',
 };
 
+export const OPTIONS = {
+  [BOT.RNN]: 'Reinforcement Learning Neural Network',
+  [BOT.RANDOM]: 'Random',
+};
+
 export default class Bot extends Service {
   @service aiWorker;
   @service game;

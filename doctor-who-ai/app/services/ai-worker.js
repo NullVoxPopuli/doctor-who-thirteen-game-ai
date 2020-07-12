@@ -2,13 +2,13 @@ import Service, { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
 
-import { worker } from '@skyrocketjs/ember';
+// import { worker } from '@skyrocketjs/ember';
 
-import { BOT } from './bot';
+// import { BOT } from './bot';
 
 export default class AIWorker extends Service {
   @service game;
-  @worker('ai') worker;
+  // @worker('ai') worker;
 
   @tracked isReady = false;
 
@@ -21,37 +21,37 @@ export default class AIWorker extends Service {
 
   @action
   async requestMove(state, algorithm) {
-    if (!this.worker) {
-      console.debug('Worker not loaded yet');
+    // if (!this.worker) {
+    //   console.debug('Worker not loaded yet');
 
-      return;
-    }
+    //   return;
+    // }
 
-    let options = { type: 'run', game: state, algorithm };
+    // let options = { type: 'run', game: state, algorithm };
 
-    if (algorithm === BOT.RNN) {
-      options.trainingData = this.trainingData;
-    }
+    // if (algorithm === BOT.RNN) {
+    //   options.trainingData = this.trainingData;
+    // }
 
-    return await this.worker.postMessage(options);
+    // return await this.worker.postMessage(options);
   }
 
   @action
   onMessage(e) {
-    let { data } = e;
+    // let { data } = e;
 
-    switch (data.type) {
-      case 'ack':
-      case 'ready':
-        return (this.isReady = true);
-      default:
-        console.error(data);
-        throw new Error('Unrecognized Message');
-    }
+    // switch (data.type) {
+    //   case 'ack':
+    //   case 'ready':
+    //     return (this.isReady = true);
+    //   default:
+    //     console.error(data);
+    //     throw new Error('Unrecognized Message');
+    // }
   }
 
   willDestroy() {
-    this.worker._worker.terminate();
+    // this.worker._worker.terminate();
   }
 }
 

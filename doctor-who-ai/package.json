@@ -31,8 +31,6 @@
     "*.{ts,js}": "yarn eslint --fix --quiet --cache"
   },
   "dependencies": {
-    "@skyrocketjs/ember": "0.0.1-alpha.1",
-    "@skyrocketjs/worker": "0.0.1-alpha.0",
     "broccoli-source": "*",
     "broccoli-merge-trees": "*",
     "git-rev-sync": "2.0.0",

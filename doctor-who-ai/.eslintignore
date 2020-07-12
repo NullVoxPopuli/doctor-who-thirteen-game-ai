@@ -2,6 +2,7 @@
 /blueprints/*/files/
 /vendor/
 /public/game-backup/
+/public/
 
 # compiled output
 /dist/
