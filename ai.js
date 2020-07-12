@@ -292,23 +292,30 @@ class UI {
               children: [
                 createElement('button', {
                   type: 'button',
-                  template: 'Run (Random)',
+                  template: 'Random',
                   events: {
                     click: () => this.runAI('random'),
                   },
                 }),
                 createElement('button', {
                   type: 'button',
-                  template: 'Run (A*)',
+                  template: 'A*',
                   events: {
                     click: () => this.runAI('a-star'),
                   }
                 }),
                 createElement('button', {
                   type: 'button',
-                  template: 'Run (RNN)',
+                  template: 'RNN',
                   events: {
                     click: () => this.runAI('RNN'),
+                  },
+                }),
+                createElement('button', {
+                  type: 'button',
+                  template: '2048',
+                  events: {
+                    click: () => this.runAI('2048'),
                   },
                 }),
                 createElement('label', {
@@ -515,6 +522,7 @@ async function installChartist() {
   await installFile(css, 'style');
   await installFile(legendJs);
 }
+
 
 async function boot() {
   await installChartist();
