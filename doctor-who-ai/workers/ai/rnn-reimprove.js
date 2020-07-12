@@ -14,7 +14,7 @@ import { imitateMove, executeMove, fakeGameFrom } from './game';
 let _reImprove = {};
 let iterations = 0;
 
-const dataLocation = 'downloads://re-improve.model.json';
+const dataLocation = 'downloads://re-improve.model';
 
 export async function runReImprove(game, trainingData) {
   Object.freeze(game.grid);
@@ -60,51 +60,65 @@ const modelFitConfig = {
 };
 
 const numActions = 3; // (including 0?)                 // The number of actions your agent can choose to do
-const inputSize = 16; // Inputs size (10x10 image for instance)
+// const inputSize = 16; // Inputs size (10x10 image for instance)
 const temporalWindow = 1; // The window of data which will be sent yo your agent
 // For instance the x previous inputs, and what actions the agent took
 
-const totalInputSize =
-  inputSize * temporalWindow + numActions * temporalWindow + inputSize;
+// const totalInputSize =
+//   inputSize * temporalWindow + numActions * temporalWindow + inputSize;
 
 function createNewModel() {
-  const network = new ReImprove.NeuralNetwork();
+  // const network = new ReImprove.NeuralNetwork();
 
-  network.InputShape = [totalInputSize];
+  // network.InputShape = [totalInputSize];
 
-  network.addNeuralNetworkLayers([
-    // Temp disable most of the network so we can test saving / loading
-    // with smaller models
-    { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 11), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 10), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 9), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 6), activation: 'relu' },
-    { type: 'dense', units: numActions, activation: 'softmax' },
-  ]);
+  let tfModel = tf.sequential();
 
-  let model = new ReImprove.Model.FromNetwork(network, modelFitConfig);
+  let hiddenLayers = [
+    Math.pow(2, 8),
+    Math.pow(2, 11),
+    Math.pow(2, 10),
+    Math.pow(2, 9),
+    Math.pow(2, 8),
+    Math.pow(2, 6),
+    Math.pow(2, 5),
+  ];
 
-  // Finally compile the model, we also exactly use tfjs's optimizers and loss functions
-  // (So feel free to choose one among tfjs's)
-  model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+  for (let i = 0; i < hiddenLayers.length; i++) {
+    let hiddenLayer = { name: 'hidden', units: hiddenLayers[i], activation: 'relu' };
+
+    if (i === 0) {
+      hiddenLayer.inputShape = [16];
+    }
+
+    tfModel.add(tf.layers.dense(hiddenLayer));
+  }
+
+  tfModel.add(tf.layers.dense({ name: 'output', units: numActions, activation: 'softmax' }));
+
+  tfModel.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+
+  let model = new ReImprove.Model();
+
+  model.model = tfModel;
 
   return model;
 }
 
-async function createNetwork() {
-  let model;
-
+async function getTfModel() {
   try {
-    model = new ReImprove.Model();
-    model.model = await tf.loadLayersModel('/re-improve.model.json');
+    return await tf.loadLayersModel('/re-improve.model');
   } catch (e) {
     console.error(e);
 
-    model = createNewModel();
+    return createNewModel();
   }
+}
 
+async function createNetwork() {
+  let model = new ReImprove.Model();
+
+  model.model = await getTfModel();
   model.FitConfig = modelFitConfig;
 
   // Every single field here is optionnal, and has a default value. Be careful, it may not
