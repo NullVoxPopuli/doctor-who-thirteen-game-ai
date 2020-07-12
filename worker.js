@@ -266,6 +266,7 @@ let iterations = 0;
 
 async function runReImprove(game, trainingData) {
   Object.freeze(game.grid);
+  let ReImprove = window.ReImprove;
 
   function createNetwork() {
     const modelFitConfig = {              // Exactly the same idea here by using tfjs's model's
