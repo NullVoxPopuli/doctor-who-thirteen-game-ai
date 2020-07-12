@@ -677,11 +677,25 @@ function run2048(game) {
     };
 
     oReq.send(null);
-
-    netAi = new AI(game.grid);
   }
 
-  var best = netAi.getBest();
+  let grid = clone(game.grid);
+  let netAi = new AI(grid);
+
+  let best = netAi.getBest();
+
+  let move;
+  for(var i=0;i<4;i++){
+    let m=best.moves[i];
+
+    let cloned = { grid: clone(grid) };
+    let moveData = imitateMove(cloned, m);
+
+    if (moveData.wasMoved) {
+      move = m;
+      break;
+    }
+  }
 
   self.postMessage({ type: 'move', move: ALL_MOVES[best.move] });
 }
