@@ -192,18 +192,18 @@ const calculateReward = (move, originalGame, currentGame) => {
     };
   }
 
-  if (clonedGame.over) {
-    if (clonedGame.won) {
-      return 1;
-    } else {
-      return -1;
-    }
-  }
+  // if (clonedGame.over) {
+  //   if (clonedGame.won) {
+  //     return 1;
+  //   } else {
+  //     return -1;
+  //   }
+  // }
 
-  if (!moveData.wasMoved) {
-    // strongly discourage invalid moves
-    return -1;
-  }
+  // if (!moveData.wasMoved) {
+  //   // strongly discourage invalid moves
+  //   return -1;
+  // }
 
   let grouped = groupByValue(originalGame);
   let newGrouped = groupByValue(moveData.model);
@@ -218,18 +218,18 @@ const calculateReward = (move, originalGame, currentGame) => {
 
   // for each value, determimne if they've been merged
   // highest first
-  let currentValues = Object.keys(newGrouped).sort((a, b) => b - a);
+  // let currentValues = Object.keys(newGrouped).sort((a, b) => b - a);
 
-  let likelyWontMakeItTo = 15; // 2 ^ 30 -- need an upper bound for rewarding
+  // let likelyWontMakeItTo = 15; // 2 ^ 30 -- need an upper bound for rewarding
 
-  for (let value of currentValues) {
-    // what if it previously didn't exist? but still isn't highest?
-    if (newGrouped[value] > (grouped[value] || 0)) {
-      // log2 converts big number to small number
-      // SEE: inverse of VALUE_MAP
-      return Math.log2(value) / likelyWontMakeItTo;
-    }
-  }
+  // for (let value of currentValues) {
+  //   // what if it previously didn't exist? but still isn't highest?
+  //   if (newGrouped[value] > (grouped[value] || 0)) {
+  //     // log2 converts big number to small number
+  //     // SEE: inverse of VALUE_MAP
+  //     return Math.log2(value) / likelyWontMakeItTo;
+  //   }
+  // }
 
   // let bestPossibleMove = outcomesForEachMove(originalGame)[0] || {};
   // let bestPossibleScore = bestPossibleMove.score;
@@ -382,7 +382,7 @@ async function runReImprove(game, trainingData) {
     });  
   }
 
-  await trainABit(game);
+  // await trainABit(game);
 
   let move = await getMove(game);
   let reward = calculateReward(move, game);
