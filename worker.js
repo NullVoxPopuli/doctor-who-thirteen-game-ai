@@ -678,7 +678,7 @@ function run2048(game) {
 
     oReq.send(null);
 
-    netAi = new AI(this.grid);
+    netAi = new AI(game.grid);
   }
 
   var best = netAi.getBest();
