@@ -346,8 +346,9 @@ async function runReImprove(game, trainingData) {
   }
 
   async function trainABit(originalGame) {
-    console.debug('Running the game to completion...');
+    console.debug('Running simulated game to completion...');
     let moves = 0;
+    let start = new Date();
     // copy the game
     // run to completion
     let clonedGame = clone(originalGame);
@@ -356,6 +357,11 @@ async function runReImprove(game, trainingData) {
 
     while (!gameManager.over || moves > 10000) {
       moves++;
+
+      if (moves % 100 === 0) {
+        console.debug(`at ${moves} moves...`);
+      }
+
       let previousGame = clone(gameManager);
       let move = await getMove(gameManager);
 
@@ -368,8 +374,11 @@ async function runReImprove(game, trainingData) {
 
     }
 
-    console.debug(`Game took ${moves} to complete... (or aborted at 10000 moves)`);
-  
+    console.debug('Simulation Finished', {
+      moves,
+      score: gameManager.score,
+      time: new Date() - start,
+    });  
   }
 
   await trainABit(game);
