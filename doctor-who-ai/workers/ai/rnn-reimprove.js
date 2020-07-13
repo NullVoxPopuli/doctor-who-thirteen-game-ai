@@ -1,5 +1,6 @@
 import ReImprove from 'reimprovejs';
 import tf from '@tensorflow/tfjs';
+import sarsa from 'sarsa';
 
 import { ALL_MOVES, MOVE_KEY_MAP } from './consts';
 import {
@@ -14,9 +15,10 @@ import { imitateMove, executeMove, fakeGameFrom } from './game';
 let _reImprove = {};
 let iterations = 0;
 
-const dataLocation = 'downloads://re-improve.model';
+const fileName = 're-improve.model';
+const dataLocation = `downloads://${fileName}`;
 
-export async function runReImprove(game, trainingData) {
+export async function runReImprove(game) {
   Object.freeze(game.grid);
 
   if (tf.getBackend() !== 'webgl') {
