@@ -40,3 +40,4 @@ Play the game "Thirteen" here: https://doctorwho.tv/games/thirteen/
 ## Resources
 
 - [2048 NN A.I.](https://tjwei.github.io/2048-NN/) - [source](https://github.com/tjwei/2048-NN)
+- [Browser A.I. Library Comparisons](https://blog.logrocket.com/ai-in-browsers-comparing-tensorflow-onnx-and-webdnn-for-image-classification/)

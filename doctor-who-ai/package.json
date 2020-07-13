@@ -3,9 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "Small description for doctor-who-ai goes here",
-  "repository": "",
+  "repository": {
+    "url": "git@github.com:NullVoxPopuli/doctor-who-thirteen-game-ai.git",
+    "directory": "doctor-who-ai"
+  },
   "license": "MIT",
-  "author": "",
+  "author": "NullVoxPopuli",
   "directories": {
     "doc": "doc",
     "test": "tests"
@@ -14,10 +17,32 @@
     "build": "ember build --environment=production",
     "lint": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*",
     "lint:hbs": "ember-template-lint .",
-    "lint:js": "eslint .",
+    "lint:js": "eslint . --cache",
     "start": "ember serve",
     "test": "npm-run-all lint:* test:*",
     "test:ember": "ember test"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,js}": "yarn eslint --fix --quiet --cache"
+  },
+  "dependencies": {
+    "broccoli-source": "*",
+    "broccoli-merge-trees": "*",
+    "git-rev-sync": "2.0.0",
+    "ember-concurrency": "1.2.1",
+    "ember-concurrency-decorators": "2.0.0",
+    "reimprovejs": "0.0.2",
+    "@tensorflow/tfjs": "2.0.1",
+    "ember-cli-chartist": "3.0.0",
+    "chartist-plugin-legend": "0.6.2"
+  },
+  "resolutions": {
+    "@tensorflow/tfjs": "2.0.1"
   },
   "devDependencies": {
     "@ember/optional-features": "^1.3.0",
@@ -34,7 +59,6 @@
     "ember-cli-inject-live-reload": "^2.0.2",
     "ember-cli-sri": "^2.1.1",
     "ember-cli-uglify": "^3.0.0",
-    "ember-data": "~3.19.0",
     "ember-export-application-global": "^2.0.1",
     "ember-fetch": "^8.0.1",
     "ember-load-initializers": "^2.1.1",
@@ -46,8 +70,13 @@
     "ember-welcome-page": "^4.0.0",
     "eslint": "^7.1.0",
     "eslint-plugin-ember": "^8.6.0",
+    "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.11",
     "loader.js": "^4.7.0",
+    "prettier": "^2.0.5",
     "npm-run-all": "^4.1.5",
     "qunit-dom": "^1.2.0"
   },
@@ -56,5 +85,9 @@
   },
   "ember": {
     "edition": "octane"
+  },
+  "volta": {
+    "node": "14.5.0",
+    "yarn": "1.22.4"
   }
 }
