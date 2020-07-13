@@ -1,7 +1,8 @@
 <div class='ai-buttons grid'>
-  <select {{on 'change' this.selectAlogrithm}}>
-    <option value='rnn'>Reinforcment Learning Neural Network</option>
-    <option value='random'>Random</option>
+  <select {{on 'change' this.selectAlgorithm}}>
+    {{#each-in this.botOptions as |value description|}}
+      <option value={{value}} selected={{eq value this.bot.currentBot}}>{{description}}</option>
+    {{/each-in}}
   </select>
 
   <button type='button' {{on 'click' this.start}}>Start</button>

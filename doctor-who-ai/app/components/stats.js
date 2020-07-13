@@ -10,6 +10,6 @@ export default class Stats extends Component {
   }
 
   get topDoctor() {
-    return 'TODO';
+    return this.game.topDoctor;
   }
 }

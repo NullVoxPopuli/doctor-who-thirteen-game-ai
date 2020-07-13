@@ -15,29 +15,30 @@ export default class Debug extends Component {
 
 async function setupLocalGame() {
   if (DEBUG) {
-    let iframe = document.createElement('iframe');
+    // let iframe = document.createElement('iframe');
 
-    iframe.src = '/game-backup/index.html';
+    // iframe.src = '/game-backup/index.html';
 
-    document.body.appendChild(iframe);
+    // document.body.appendChild(iframe);
 
-    // let css = 'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/game-backup/dist/css/main.min.css';
-    // let js = 'https://raw.githubusercontent.com/NullVoxPopuli/doctor-who-thirteen-game-ai/master/game-backup/dist/js/app.min.css';
+    let css = '/dist/css/main.min.css';
+    let js = '/dist/js/app.min.js';
 
-    // async function installFile(url, type = 'script') {
-    //   // fetching the URL instead of directly loading in a script
-    //   // tag allows us to get around CORS issues
-    //   let response = await fetch(url);
-    //   let script = await response.text();
-
-    //   let element = document.createElement(type);
-
-    //   element.innerHTML = script;
-
-    //   document.body.appendChild(element);
-    // }
-
-    // await installFile(css);
-    // await installFile(js);
+    await installFile('https://code.jquery.com/jquery-3.5.1.slim.min.js');
+    await installFile(css, 'style');
+    await installFile(js);
   }
+}
+
+async function installFile(url, type = 'script') {
+  // fetching the URL instead of directly loading in a script
+  // tag allows us to get around CORS issues
+  let response = await fetch(url);
+  let script = await response.text();
+
+  let element = document.createElement(type);
+
+  element.innerHTML = script;
+
+  document.body.appendChild(element);
 }
