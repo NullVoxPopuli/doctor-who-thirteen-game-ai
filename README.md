@@ -41,3 +41,4 @@ Play the game "Thirteen" here: https://doctorwho.tv/games/thirteen/
 
 - [2048 NN A.I.](https://tjwei.github.io/2048-NN/) - [source](https://github.com/tjwei/2048-NN)
 - [Browser A.I. Library Comparisons](https://blog.logrocket.com/ai-in-browsers-comparing-tensorflow-onnx-and-webdnn-for-image-classification/)
+- [CovNetJS](https://cs.stanford.edu/people/karpathy/convnetjs/demo/rldemo.html) - not used here, but has good explanations and demos

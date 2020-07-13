@@ -5,7 +5,7 @@ export const VALUE_MAP = {
   512:   9, 1024:  10, 2048:  11, 4096: 12,
   8192: 13, 16384: 14, 32768: 15,
   /* eslint-enable prettier/prettier */
-};
+} as const;
 
 export const DOCTOR_NUMBER_MAP = {
   1: '01 - William Hartnell',
@@ -24,7 +24,7 @@ export const DOCTOR_NUMBER_MAP = {
   14: '13 - Jodie Whittaker',
 };
 
-export function biggestTile(game) {
+export function biggestTile(game: Game2048) {
   let tiles = game.grid.cells
     .map((row) => row.map((cell) => (cell ? cell.value : 1)))
     .flat();

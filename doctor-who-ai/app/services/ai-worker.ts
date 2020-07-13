@@ -6,7 +6,7 @@ import { tracked } from '@glimmer/tracking';
 
 // import { BOT } from './bot';
 
-import { runReImprove as getMove, train100Games } from './ai/rnn-reimprove';
+import { run as getMove, train100Games } from './ai/rnn';
 
 export default class AIWorker extends Service {
   @service game;
@@ -14,20 +14,13 @@ export default class AIWorker extends Service {
 
   @tracked isReady = false;
 
-  get trainingData() {
-    return JSON.parse(localStorage.getItem('training'));
-  }
-  set trainingData(value) {
-    localStorage.setItem('training', JSON.stringify(value));
+  @action
+  async train(seedGame: Game2048) {
+    // await train100Games(seedGame);
   }
 
   @action
-  async train(seedGame) {
-    await train100Games(seedGame);
-  }
-
-  @action
-  async requestMove(state, algorithm) {
+  async requestMove(state: Game2048, algorithm) {
     // if (!this.worker) {
     //   console.debug('Worker not loaded yet');
 
