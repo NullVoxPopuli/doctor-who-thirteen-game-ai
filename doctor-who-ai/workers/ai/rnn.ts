@@ -44,11 +44,26 @@ export async function train100Games(game: Game2048) {
   await useGPU();
   await ensureNetwork();
 
-  for (let i = 0; i < 10000; i++) {
-    await trainABit(game);
-  }
+  let games = 0;
 
-  await save(network);
+  return await new Promise(resolve => {
+    let trainOnce = () => trainABit(game);
+    let callback = async () => {
+      games++;
+      await trainOnce();
+
+      if (games < 10000) {
+        requestAnimationFrame(callback);
+      } else {
+        await save(network);
+
+        // let the call-site continue
+        resolve();
+      }
+    }
+
+    window.requestAnimationFrame(callback);
+  });
 }
 
 async function getMove(game: Game2048): Promise<DirectionKey> {
