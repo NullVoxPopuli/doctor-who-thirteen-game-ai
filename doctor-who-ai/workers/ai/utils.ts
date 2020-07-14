@@ -1,7 +1,7 @@
 export const voidFn = () => undefined;
-export const clone = (obj) => JSON.parse(JSON.stringify(obj));
+export const clone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
-export const isEqual = (a, b) => {
+export const isEqual = (a: GameCells, b: GameCells) => {
   // a and b have the same dimensions
   for (let i = 0; i < a.length; i++) {
     for (let j = 0; j < b.length; j++) {
@@ -19,11 +19,11 @@ export const isEqual = (a, b) => {
   return true;
 };
 
-export const gameTo1DArray = (game) => {
+export const gameTo1DArray = (game: Game2048) => {
   return game.grid.cells.flat().map((cell) => (cell ? cell.value : 0));
 };
 
-export const groupByValue = (game) => {
+export const groupByValue = (game: Game2048) => {
   let values = gameTo1DArray(game);
 
   return values.reduce((group, value) => {
@@ -33,7 +33,7 @@ export const groupByValue = (game) => {
   }, {});
 };
 
-export async function loadDependencies(dependencies) {
+export async function loadDependencies(dependencies: string[]) {
   await Promise.all(
     dependencies.map(async (depUrl) => {
       let response = await fetch(depUrl);

@@ -1,18 +1,23 @@
-import tf from '@tensorflow/tfjs';
-import sarsa from 'sarsa';
+// import tf from '@tensorflow/tfjs';
+// import sarsa from 'sarsa';
 
-import { useGPU, getNetwork, save } from './tf-utils';
+import { useGPU, getNetwork, getAgent, save } from './tf-utils';
 import { ALL_MOVES, MOVE_KEY_MAP } from './consts';
+
+import type { DirectionKey, InternalMove }  from './consts';
+
 import {
   clone,
   groupByValue,
   gameTo1DArray,
   isEqual,
 } from './utils';
+
 import { imitateMove, executeMove, fakeGameFrom } from './game';
 
-let network!: tf.LayersModel;
-let learner!: any;
+// let network!: tf.LayersModel;
+let network: any;
+let agent: any;
 let iterations = 0;
 
 export async function run(game: Game2048) {
@@ -29,7 +34,7 @@ export async function run(game: Game2048) {
 async function ensureNetwork() {
   if (!network) {
     network = await getNetwork();
-    learner = sarsa();
+    agent = await getAgent(network);
   }
 }
 
@@ -46,16 +51,9 @@ export async function train100Games(game: Game2048) {
   await save(network);
 }
 
-async function getMove(game: Game2048) {
-  let inputs = tf.tensor1d(gameTo1DArray(game));
-
-  let result = network.predict(inputs);
-
-  inputs.dispose();
-
-  console.log(result);
-
-  let moveIndex = result.toInt();
+async function getMove(game: Game2048): Promise<DirectionKey> {
+  let inputs = gameTo1DArray(game);
+  let moveIndex = await agent.step(inputs);
   let move = ALL_MOVES[moveIndex];
 
   return move;
@@ -65,29 +63,21 @@ async function trainABit(originalGame: Game2048) {
   console.debug('Running simulated game to completion...');
   let moves = 0;
   let start = (new Date()).getDate();
-  // copy the game
-  // run to completion
   let clonedGame = clone(originalGame);
   let gameManager = fakeGameFrom(clonedGame);
 
   while (!gameManager.over) {
     moves++;
 
-    // if (moves % 100 === 0) {
-    //   console.debug(`at ${moves} moves...`);
-    // }
-
     let previousGame = clone(gameManager);
     let move = await getMove(gameManager);
 
     executeMove(gameManager, move);
-    network.train()
 
     let internalMove = MOVE_KEY_MAP[move];
     let reward = calculateReward(internalMove, previousGame, gameManager);
 
-    sarsa.chooseAction()
-    // _reImprove.academy.addRewardToAgent(_reImprove.agent, reward);
+    agent.reward(reward);
   }
 
   iterations++;
@@ -99,7 +89,7 @@ async function trainABit(originalGame: Game2048) {
   });
 }
 
-const calculateReward = (move, originalGame, currentGame) => {
+const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame: Game2048) => {
   let moveData;
   let clonedGame;
 

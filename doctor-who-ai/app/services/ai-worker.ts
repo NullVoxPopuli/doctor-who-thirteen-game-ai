@@ -16,7 +16,7 @@ export default class AIWorker extends Service {
 
   @action
   async train(seedGame: Game2048) {
-    // await train100Games(seedGame);
+    await train100Games(seedGame);
   }
 
   @action

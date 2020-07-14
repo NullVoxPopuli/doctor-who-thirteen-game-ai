@@ -37,10 +37,10 @@ module.exports = function (defaults) {
       enabled: false,
     },
     autoImport: {
-      // alias: {
-      //   // the "main" entry is incorrect for this package
-      //   reimprovejs: 'reimprovejs/dist/reimprove.js',
-      // },
+      alias: {
+        // the "main" entry is incorrect for this package
+        reimprovejs: 'reimprovejs/dist/reimprove.js',
+      },
     },
   });
 

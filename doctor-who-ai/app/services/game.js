@@ -38,7 +38,10 @@ export default class Game extends Service {
   pressKey(key) {
     simulateKeyPress(key);
 
-    this.topDoctor = topDoctorFor(this.state);
+    // state will be empty at game's end
+    if (this.state) {
+      this.topDoctor = topDoctorFor(this.state);
+    }
   }
 }
 

@@ -32,7 +32,8 @@
   },
   "dependencies": {
     "ml5": "0.5.0",
-    "@tensorflow/tfjs": "2.0.1",
+    "@tensorflow/tfjs": "1.2.1",
+    "reimprovejs": "0.0.2",
     "broccoli-merge-trees": "*",
     "broccoli-source": "*",
     "chartist-plugin-legend": "0.6.2",
