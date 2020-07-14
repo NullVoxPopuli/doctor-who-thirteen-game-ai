@@ -116,9 +116,9 @@ export async function getAgent(model) {
   // fit your needs ...
 
   const teacherConfig = {
-    lessonsQuantity: 10,                   // Number of training lessons before only testing agent
-    lessonsLength: 100,                    // The length of each lesson (in quantity of updates)
-    lessonsWithRandom: 2,                  // How many random lessons before updating epsilon's value
+    lessonsQuantity: 100,                   // Number of training lessons before only testing agent
+    lessonsLength: 10,                    // The length of each lesson (in quantity of updates)
+    lessonsWithRandom: 50,                  // How many random lessons before updating epsilon's value
     epsilon: 1,                            // Q-Learning values and so on ...
     epsilonDecay: 0.995,                   // (Random factor epsilon, decaying over time)
     epsilonMin: 0.05,
@@ -129,7 +129,7 @@ export async function getAgent(model) {
     model: model,                          // Our model corresponding to the agent
     agentConfig: {
       memorySize: 5000,                      // The size of the agent's memory (Q-Learning)
-      batchSize: 128,                        // How many tensors will be given to the network when fit
+      batchSize: 16,                        // How many tensors will be given to the network when fit
       temporalWindow: 1         // The temporal window giving previous inputs & actions
     }
   };

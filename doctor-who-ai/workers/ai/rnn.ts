@@ -39,31 +39,54 @@ async function ensureNetwork() {
 }
 
 export async function train100Games(game: Game2048) {
+  console.time('Training');
   Object.freeze(game.grid);
 
   await useGPU();
   await ensureNetwork();
 
   let games = 0;
+  let batches = 10;
+  let gamesPerBatch = 20;
+  let total = batches * gamesPerBatch;
+  // work has to be batched, cause the browser tab
+  // keeps crashing
+  // can this be moved to a web worker?
+  let trainOnce = () => trainABit(game);
 
-  return await new Promise(resolve => {
-    let trainOnce = () => trainABit(game);
-    let callback = async () => {
+  let trainBatch = async () => {
+    for (let i = 0; i < gamesPerBatch; i++) {
       games++;
-      await trainOnce();
+      let trainingResult = await trainOnce();
 
-      if (games < 10000) {
-        requestAnimationFrame(callback);
+      console.debug(`${total - games} left until displayed game. Last: `, trainingResult);
+    }
+  };
+
+  return new Promise(resolve => {
+
+    let callback = async () => {
+      await trainBatch();
+
+      if (games < total) {
+        setTimeout(() => {
+          requestIdleCallback(callback);
+          // 1s break to trick the browser in to thnking
+          // the page is responsive
+        }, 1000);
       } else {
-        await save(network);
+        // await save(network);
 
         // let the call-site continue
+        console.timeEnd('Training');
         resolve();
       }
     }
 
-    window.requestAnimationFrame(callback);
+    requestIdleCallback(callback);
   });
+
+
 }
 
 async function getMove(game: Game2048): Promise<DirectionKey> {
@@ -75,7 +98,6 @@ async function getMove(game: Game2048): Promise<DirectionKey> {
 }
 
 async function trainABit(originalGame: Game2048) {
-  console.debug('Running simulated game to completion...');
   let moves = 0;
   let start = (new Date()).getDate();
   let clonedGame = clone(originalGame);
@@ -96,12 +118,12 @@ async function trainABit(originalGame: Game2048) {
   }
 
   iterations++;
-  console.debug('Simulation Finished', {
+  return {
     moves,
     numTrainedGames: iterations,
     score: gameManager.score,
     time: (new Date()).getDate() - start,
-  });
+  };
 }
 
 const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame: Game2048) => {
