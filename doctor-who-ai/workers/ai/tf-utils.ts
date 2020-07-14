@@ -32,7 +32,8 @@ export async function getNetwork() {
 
   try {
     // await network.load(fileInfo);
-    network = await ReImprove.Model.loadFromFile(fileInfoLocation)
+    // ReImprove.JS is broken and can't handle loadLayersModel
+    // network.model = await tf.loadLayersModel(fileInfoLocation)
 
     return network;
   } catch (e) {

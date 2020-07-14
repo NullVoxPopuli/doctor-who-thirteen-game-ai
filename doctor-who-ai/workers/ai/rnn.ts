@@ -44,7 +44,7 @@ export async function train100Games(game: Game2048) {
   await useGPU();
   await ensureNetwork();
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 10000; i++) {
     await trainABit(game);
   }
 
