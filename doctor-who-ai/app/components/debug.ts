@@ -1,11 +1,15 @@
 import Component from '@glimmer/component';
 import { DEBUG } from '@glimmer/env';
 
-export default class Debug extends Component {
+type Args = {
+  // no args
+};
+
+export default class Debug extends Component<Args> {
   IS_DEVELOPMENT = DEBUG;
 
-  constructor() {
-    super(...arguments);
+  constructor(owner: unknown, args: Args) {
+    super(owner, args);
 
     if (DEBUG) {
       setupLocalGame();
@@ -21,8 +25,8 @@ async function setupLocalGame() {
 
     // document.body.appendChild(iframe);
 
-    let css = '/dist/css/main.min.css';
-    let js = '/dist/js/app.min.js';
+    const css = '/dist/css/main.min.css';
+    const js = '/dist/js/app.min.js';
 
     await installFile('https://code.jquery.com/jquery-3.5.1.slim.min.js');
     await installFile(css, 'style');
@@ -30,13 +34,13 @@ async function setupLocalGame() {
   }
 }
 
-async function installFile(url, type = 'script') {
+async function installFile(url: string, type = 'script') {
   // fetching the URL instead of directly loading in a script
   // tag allows us to get around CORS issues
-  let response = await fetch(url);
-  let script = await response.text();
+  const response = await fetch(url);
+  const script = await response.text();
 
-  let element = document.createElement(type);
+  const element = document.createElement(type);
 
   element.innerHTML = script;
 

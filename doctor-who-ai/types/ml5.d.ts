@@ -6,12 +6,12 @@
 // TODO: Test autocomplete in a vanilla JS project
 // TODO: Test autocomplete in a TypeScript project
 
-import { MediaElement } from "p5";
+import { MediaElement } from 'p5';
 
 export as namespace ml5;
 
 type PoseNetOptions = {
-  detectionType: "single" | "multiple";
+  detectionType: 'single' | 'multiple';
   flipHorizontal: boolean;
   imageScaleFactor: number;
   maxPoseDetections: number;
@@ -35,134 +35,134 @@ type YoloOptions = {
 };
 
 type SketchRnnModel =
-  | "alarm_clock"
-  | "ambulance"
-  | "angel"
-  | "ant"
-  | "antyoga"
-  | "backpack"
-  | "barn"
-  | "basket"
-  | "bear"
-  | "bee"
-  | "beeflower"
-  | "bicycle"
-  | "bird"
-  | "book"
-  | "brain"
-  | "bridge"
-  | "bulldozer"
-  | "bus"
-  | "butterfly"
-  | "cactus"
-  | "calendar"
-  | "castle"
-  | "cat"
-  | "catbus"
-  | "catpig"
-  | "chair"
-  | "couch"
-  | "crab"
-  | "crabchair"
-  | "crabrabbitfacepig"
-  | "cruise_ship"
-  | "diving_board"
-  | "dog"
-  | "dogbunny"
-  | "dolphin"
-  | "duck"
-  | "elephant"
-  | "elephantpig"
-  | "eye"
-  | "face"
-  | "fan"
-  | "fire_hydrant"
-  | "firetruck"
-  | "flamingo"
-  | "flower"
-  | "floweryoga"
-  | "frog"
-  | "frogsofa"
-  | "garden"
-  | "hand"
-  | "hedgeberry"
-  | "hedgehog"
-  | "helicopter"
-  | "kangaroo"
-  | "key"
-  | "lantern"
-  | "lighthouse"
-  | "lion"
-  | "lionsheep"
-  | "lobster"
-  | "map"
-  | "mermaid"
-  | "monapassport"
-  | "monkey"
-  | "mosquito"
-  | "octopus"
-  | "owl"
-  | "paintbrush"
-  | "palm_tree"
-  | "parrot"
-  | "passport"
-  | "peas"
-  | "penguin"
-  | "pig"
-  | "pigsheep"
-  | "pineapple"
-  | "pool"
-  | "postcard"
-  | "power_outlet"
-  | "rabbit"
-  | "rabbitturtle"
-  | "radio"
-  | "radioface"
-  | "rain"
-  | "rhinoceros"
-  | "rifle"
-  | "roller_coaster"
-  | "sandwich"
-  | "scorpion"
-  | "sea_turtle"
-  | "sheep"
-  | "skull"
-  | "snail"
-  | "snowflake"
-  | "speedboat"
-  | "spider"
-  | "squirrel"
-  | "steak"
-  | "stove"
-  | "strawberry"
-  | "swan"
-  | "swing_set"
-  | "the_mona_lisa"
-  | "tiger"
-  | "toothbrush"
-  | "toothpaste"
-  | "tractor"
-  | "trombone"
-  | "truck"
-  | "whale"
-  | "windmill"
-  | "yoga"
-  | "yogabicycle"
-  | "everything";
+  | 'alarm_clock'
+  | 'ambulance'
+  | 'angel'
+  | 'ant'
+  | 'antyoga'
+  | 'backpack'
+  | 'barn'
+  | 'basket'
+  | 'bear'
+  | 'bee'
+  | 'beeflower'
+  | 'bicycle'
+  | 'bird'
+  | 'book'
+  | 'brain'
+  | 'bridge'
+  | 'bulldozer'
+  | 'bus'
+  | 'butterfly'
+  | 'cactus'
+  | 'calendar'
+  | 'castle'
+  | 'cat'
+  | 'catbus'
+  | 'catpig'
+  | 'chair'
+  | 'couch'
+  | 'crab'
+  | 'crabchair'
+  | 'crabrabbitfacepig'
+  | 'cruise_ship'
+  | 'diving_board'
+  | 'dog'
+  | 'dogbunny'
+  | 'dolphin'
+  | 'duck'
+  | 'elephant'
+  | 'elephantpig'
+  | 'eye'
+  | 'face'
+  | 'fan'
+  | 'fire_hydrant'
+  | 'firetruck'
+  | 'flamingo'
+  | 'flower'
+  | 'floweryoga'
+  | 'frog'
+  | 'frogsofa'
+  | 'garden'
+  | 'hand'
+  | 'hedgeberry'
+  | 'hedgehog'
+  | 'helicopter'
+  | 'kangaroo'
+  | 'key'
+  | 'lantern'
+  | 'lighthouse'
+  | 'lion'
+  | 'lionsheep'
+  | 'lobster'
+  | 'map'
+  | 'mermaid'
+  | 'monapassport'
+  | 'monkey'
+  | 'mosquito'
+  | 'octopus'
+  | 'owl'
+  | 'paintbrush'
+  | 'palm_tree'
+  | 'parrot'
+  | 'passport'
+  | 'peas'
+  | 'penguin'
+  | 'pig'
+  | 'pigsheep'
+  | 'pineapple'
+  | 'pool'
+  | 'postcard'
+  | 'power_outlet'
+  | 'rabbit'
+  | 'rabbitturtle'
+  | 'radio'
+  | 'radioface'
+  | 'rain'
+  | 'rhinoceros'
+  | 'rifle'
+  | 'roller_coaster'
+  | 'sandwich'
+  | 'scorpion'
+  | 'sea_turtle'
+  | 'sheep'
+  | 'skull'
+  | 'snail'
+  | 'snowflake'
+  | 'speedboat'
+  | 'spider'
+  | 'squirrel'
+  | 'steak'
+  | 'stove'
+  | 'strawberry'
+  | 'swan'
+  | 'swing_set'
+  | 'the_mona_lisa'
+  | 'tiger'
+  | 'toothbrush'
+  | 'toothpaste'
+  | 'tractor'
+  | 'trombone'
+  | 'truck'
+  | 'whale'
+  | 'windmill'
+  | 'yoga'
+  | 'yogabicycle'
+  | 'everything';
 
 export function imageClassifier(
-  model: "MobileNet" | "Darknet" | "Darknet-tiny" | string,
+  model: 'MobileNet' | 'Darknet' | 'Darknet-tiny' | string,
   callback?: (error: any, result: any) => void
 ): undefined | Promise<any>;
 
 export function imageClassifier(
-  model: "MobileNet" | "Darknet" | "Darknet-tiny" | string,
+  model: 'MobileNet' | 'Darknet' | 'Darknet-tiny' | string,
   options?: ImageClassifierOptions,
   callback?: (error: any, result: any) => void
 ): undefined | Promise<any>;
 
 export function imageClassifier(
-  model: "MobileNet" | "Darknet" | "Darknet-tiny" | string,
+  model: 'MobileNet' | 'Darknet' | 'Darknet-tiny' | string,
   video?: MediaElement | HTMLVideoElement,
   options?: ImageClassifierOptions,
   callback?: (error: any, result: any) => void
@@ -170,7 +170,7 @@ export function imageClassifier(
 
 export function poseNet(
   video?: MediaElement | HTMLVideoElement,
-  type?: "single" | "multiple",
+  type?: 'single' | 'multiple',
   callback?: (error: any, result: any) => void
 ): undefined | Promise<any>;
 
@@ -187,7 +187,7 @@ export function poseNet(
 
 export function bodyPix(
   video?: MediaElement | HTMLVideoElement,
-  type?: "single" | "multiple",
+  type?: 'single' | 'multiple',
   callback?: (error: any, result: any) => void,
   options?: any
 ): undefined | Promise<any>;
@@ -246,7 +246,7 @@ export function soundClassifier(
 ): undefined | Promise<any>;
 
 export function pitchDetection(
-  model: "CREPE",
+  model: 'CREPE',
   audioContext: AudioContext,
   stream: MediaStream,
   callback?: (error: any, result: any) => void

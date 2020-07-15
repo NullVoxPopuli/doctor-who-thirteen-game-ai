@@ -92,3 +92,9 @@ export default class Bot extends Service {
     }
   }
 }
+
+declare module '@ember/service' {
+  interface Registry {
+    bot: Bot;
+  }
+}

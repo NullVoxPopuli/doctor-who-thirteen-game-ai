@@ -2,6 +2,19 @@ import Service from '@ember/service';
 import { action, computed } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
 
+type HistoryEntry = {
+  bestScore?: number;
+  score: number;
+  averageScore: number;
+  time: number;
+  averageTime: number;
+};
+
+type GameInfo = {
+  score: number;
+  time: number;
+};
+
 const HISTORY_SIZE = 60;
 
 const INITIAL = {
@@ -12,7 +25,7 @@ const INITIAL = {
 
 export default class GameHistory extends Service {
   @tracked totalGames = 0;
-  @tracked history = [];
+  @tracked history: HistoryEntry[] = [];
 
   // TODO: replace with @cached
   @computed('history.length')
@@ -32,9 +45,9 @@ export default class GameHistory extends Service {
   }
 
   @action
-  addGame({ score, time }) {
-    let scores = [...this.scores, score];
-    let times = [...this.history.map((h) => h.time), time];
+  addGame({ score, time }: GameInfo) {
+    const scores = [...this.scores, score];
+    const times = [...this.history.map((h) => h.time), time];
 
     this.history.push({
       score,
@@ -50,12 +63,16 @@ export default class GameHistory extends Service {
 
   @action
   trimToWindow() {
-    this.history = this.history.slice(
-      Math.max(this.history.length - HISTORY_SIZE, 0)
-    );
+    this.history = this.history.slice(Math.max(this.history.length - HISTORY_SIZE, 0));
   }
 }
 
-function average(numbers) {
+function average(numbers: number[]) {
   return numbers.reduce((a, b) => a + b, 0) / numbers.length;
+}
+
+declare module '@ember/service' {
+  interface Registry {
+    history: History;
+  }
 }

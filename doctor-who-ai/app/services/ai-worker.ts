@@ -34,7 +34,7 @@ export default class AIWorker extends Service {
     // }
 
     // return await this.worker.postMessage(options);
-    let move = await getMove(state);
+    const move = await getMove(state);
 
     return { move };
   }

@@ -7,10 +7,7 @@ export default class Graph extends Component {
 
   get chartData() {
     return {
-      series: [
-        this.history.scores,
-        this.history.averageScores,
-      ],
+      series: [this.history.scores, this.history.averageScores],
     };
   }
 
@@ -30,5 +27,4 @@ export default class Graph extends Component {
       },
     };
   }
-
 }

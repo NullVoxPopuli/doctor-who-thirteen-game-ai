@@ -22,18 +22,19 @@ export const DOCTOR_NUMBER_MAP = {
   12: '11 - Matt Smith',
   13: '12 - Peter Capaldi',
   14: '13 - Jodie Whittaker',
-};
+} as const;
+
+type Index = keyof typeof DOCTOR_NUMBER_MAP;
+export type DoctorLabel = typeof DOCTOR_NUMBER_MAP[Index];
 
 export function biggestTile(game: Game2048) {
-  let tiles = game.grid.cells
-    .map((row) => row.map((cell) => (cell ? cell.value : 1)))
-    .flat();
+  let tiles = game.grid.cells.map((row) => row.map((cell) => (cell ? cell.value : 1))).flat();
 
-  let value = Math.max(...tiles);
+  let value = Math.max(...tiles) as Value;
 
   return { value, num: VALUE_MAP[value] };
 }
 
-export function round(num) {
+export function round(num: number) {
   return Math.round(num * 100) / 100;
 }

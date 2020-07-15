@@ -3,9 +3,10 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 
 import { DOCTOR_NUMBER_MAP, biggestTile } from 'doctor-who-ai/utils';
+import type { DirectionKey } from './ai/consts';
 
 export default class Game extends Service {
-  @tracked startTime;
+  @tracked startTime?: number;
   @tracked topDoctor = '';
 
   get isGameOver() {
@@ -24,7 +25,7 @@ export default class Game extends Service {
   snapshot() {
     return {
       score: this.score,
-      time: new Date() - this.startTime,
+      time: new Date().getDate() - this.startTime,
     };
   }
 
@@ -35,7 +36,7 @@ export default class Game extends Service {
     document.querySelector('.retry-button').click();
   }
 
-  pressKey(key) {
+  pressKey(key: DirectionKey) {
     simulateKeyPress(key);
 
     // state will be empty at game's end
@@ -45,14 +46,14 @@ export default class Game extends Service {
   }
 }
 
-function topDoctorFor(game) {
-  let biggest = biggestTile(game);
+function topDoctorFor(game: Game2048) {
+  const biggest = biggestTile(game);
 
-  return DOCTOR_NUMBER_MAP[biggest];
+  return DOCTOR_NUMBER_MAP[biggest.num];
 }
 
 function simulateKeyPress(k) {
-  let oEvent = document.createEvent('KeyboardEvent');
+  const oEvent = document.createEvent('KeyboardEvent');
 
   function defineConstantGetter(name, value) {
     Object.defineProperty(oEvent, name, {
@@ -75,4 +76,10 @@ function simulateKeyPress(k) {
     /* eslint-enable */
 
   document.dispatchEvent(oEvent);
+}
+
+declare module '@ember/service' {
+  interface Registry {
+    game: Game;
+  }
 }

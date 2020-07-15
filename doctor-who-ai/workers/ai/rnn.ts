@@ -4,14 +4,9 @@
 import { useGPU, getNetwork, getAgent, save } from './tf-utils';
 import { ALL_MOVES, MOVE_KEY_MAP } from './consts';
 
-import type { DirectionKey, InternalMove }  from './consts';
+import type { DirectionKey, InternalMove } from './consts';
 
-import {
-  clone,
-  groupByValue,
-  gameTo1DArray,
-  isEqual,
-} from './utils';
+import { clone, groupByValue, gameTo1DArray, isEqual } from './utils';
 
 import { imitateMove, executeMove, fakeGameFrom } from './game';
 
@@ -63,8 +58,7 @@ export async function train100Games(game: Game2048) {
     }
   };
 
-  return new Promise(resolve => {
-
+  return new Promise((resolve) => {
     let callback = async () => {
       await trainBatch();
 
@@ -81,12 +75,10 @@ export async function train100Games(game: Game2048) {
         console.timeEnd('Training');
         resolve();
       }
-    }
+    };
 
     requestIdleCallback(callback);
   });
-
-
 }
 
 async function getMove(game: Game2048): Promise<DirectionKey> {
@@ -99,7 +91,7 @@ async function getMove(game: Game2048): Promise<DirectionKey> {
 
 async function trainABit(originalGame: Game2048) {
   let moves = 0;
-  let start = (new Date()).getDate();
+  let start = new Date().getDate();
   let clonedGame = clone(originalGame);
   let gameManager = fakeGameFrom(clonedGame);
 
@@ -118,11 +110,12 @@ async function trainABit(originalGame: Game2048) {
   }
 
   iterations++;
+
   return {
     moves,
     numTrainedGames: iterations,
     score: gameManager.score,
-    time: (new Date()).getDate() - start,
+    time: new Date().getDate() - start,
   };
 }
 
@@ -138,10 +131,7 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
     moveData = {
       model: currentGame,
       score: currentGame.score,
-      wasMoved: !isEqual(
-        currentGame.serialize().grid.cells,
-        originalGame.grid.cells
-      ),
+      wasMoved: !isEqual(currentGame.serialize().grid.cells, originalGame.grid.cells),
     };
   }
 
@@ -153,10 +143,10 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
   //   }
   // }
 
-  // if (!moveData.wasMoved) {
-  //   // strongly discourage invalid moves
-  //   return -1;
-  // }
+  if (!moveData.wasMoved) {
+    // strongly discourage invalid moves
+    return -1;
+  }
 
   let grouped = groupByValue(originalGame);
   let newGrouped = groupByValue(moveData.model);
