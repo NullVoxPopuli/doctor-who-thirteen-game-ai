@@ -31,7 +31,7 @@
     "*.{ts,js}": "yarn eslint --fix --quiet --cache"
   },
   "dependencies": {
-    "@tensorflow/tfjs": "1.2.1",
+    "@tensorflow/tfjs": "2.0.1",
     "broccoli-merge-trees": "*",
     "broccoli-source": "*",
     "chartist-plugin-legend": "0.6.2",
@@ -40,10 +40,7 @@
     "ember-concurrency-decorators": "2.0.1",
     "ember-concurrency-async": "0.3.0",
     "ember-concurrency-ts": "0.2.0",
-    "git-rev-sync": "2.0.0",
-    "ml5": "0.5.0",
-    "reimprovejs": "0.0.2",
-    "sarsa": "1.0.1"
+    "git-rev-sync": "2.0.0"
   },
   "resolutions": {
     "@tensorflow/tfjs": "2.0.1"

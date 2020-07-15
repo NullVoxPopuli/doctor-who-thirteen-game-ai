@@ -1,17 +1,8 @@
-import * as tf from '@tensorflow/tfjs';
-import ReImprove from 'reimprovejs';
-
-// import ml5 from 'ml5';
+import tf from '@tensorflow/tfjs';
 
 const fileName = 're-improve.model';
 const dataLocation = `downloads://${fileName}`;
-// const fileInfoLocation = `/${fileName}.json`;
-
-// const fileInfo = {
-//   model: '/model.json',
-//   metadata: '/model.meta.json',
-//   weights: '/model.weights.bin',
-// };
+const fileInfoLocation = `/${fileName}.json`;
 
 export async function useGPU() {
   if (tf.getBackend() !== 'webgl') {
@@ -21,94 +12,43 @@ export async function useGPU() {
   await tf.ready();
 }
 
-export async function save(network) {
-  // await network.export(fileName, 'downloads');
-
-  await network.model.save(dataLocation);
+export async function save(network: tf.LayersModel) {
+  await network.save(dataLocation);
 }
 
-export async function getNetwork() {
-  let network = createNetwork();
-
+export async function getNetwork(): Promise<tf.LayersModel> {
   try {
-    // await network.load(fileInfo);
-    // ReImprove.JS is broken and can't handle loadLayersModel
-    // network.model = await tf.loadLayersModel(fileInfoLocation)
-
-    return network;
+    return await tf.loadLayersModel(fileInfoLocation);
   } catch (e) {
     console.debug(e);
 
-    return network;
+    return createNetwork();
   }
 }
 
 function createNetwork() {
-  /**
-   * ML5
-   */
-  // return ml5.neuralNetwork({
-  //   debug: true,
-  //   inputs: 16,
-  //   outputs: 4,
-  //   layers: [
-  //     { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-  //     { type: 'dense', units: Math.pow(2, 11), activation: 'relu' },
-  //     { type: 'dense', units: Math.pow(2, 10), activation: 'relu' },
-  //     { type: 'dense', units: Math.pow(2, 9), activation: 'relu' },
-  //     { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-  //     { type: 'dense', units: Math.pow(2, 6), activation: 'relu' },
-  //     { type: 'dense', units: Math.pow(2, 5), activation: 'relu' },
-  //     { type: 'dense', units: 4, activation: 'softmax' },
-  //   ],
-  // });
+  let model = tf.sequential();
 
-  /**
-   * ReImprove
-   */
-  const modelFitConfig = {
-    // Exactly the same idea here by using tfjs's model's
-    epochs: 1, // fit config.
-    stepsPerEpoch: 16,
-  };
+  model.add(tf.layers.dense({ units: Math.pow(2, 9), inputShape: [16], activation: 'relu' }));
+  model.add(tf.layers.dense({ units: Math.pow(2, 11), activation: 'relu' }));
+  model.add(tf.layers.dense({ units: Math.pow(2, 10), activation: 'relu' }));
+  model.add(tf.layers.dense({ units: Math.pow(2, 9), activation: 'relu' }));
+  model.add(tf.layers.dense({ units: Math.pow(2, 8), activation: 'relu' }));
+  model.add(tf.layers.dense({ units: Math.pow(2, 6), activation: 'relu' }));
+  model.add(tf.layers.dense({ units: Math.pow(2, 5), activation: 'relu' }));
+  model.add(tf.layers.dense({ units: 4, activation: 'softmax' }));
 
-  const numActions = 3; // The number of actions your agent can choose to do
-  const inputSize = 16; // Inputs size (10x10 image for instance)
-  const temporalWindow = 1; // The window of data which will be sent yo your agent
-  // For instance the x previous inputs, and what actions the agent took
-
-  const totalInputSize = inputSize * temporalWindow + numActions * temporalWindow + inputSize;
-
-  const network = new ReImprove.NeuralNetwork();
-
-  network.InputShape = [totalInputSize];
-  network.addNeuralNetworkLayers([
-    { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 11), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 10), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 9), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 6), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 5), activation: 'relu' },
-    { type: 'dense', units: numActions, activation: 'softmax' },
-  ]);
-  // Now we initialize our model, and start adding layers
-  const model = new ReImprove.Model.FromNetwork(network, modelFitConfig);
-
-  // Finally compile the model, we also exactly use tfjs's optimizers and loss functions
-  // (So feel free to choose one among tfjs's)
-  model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+  model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
 
   return model;
 }
 
-const trainingOptions = {
-  batchSize: 32,
-  epochs: 16,
-};
-
-export async function train(network) {
-  await network.train(trainingOptions);
+export async function train(
+  network: tf.Sequential,
+  gameState: tf.Tensor1D,
+  rankedMoves: tf.Tensor1D
+) {
+  await network.fit(gameState, rankedMoves, { batchSize: 32, epochs: 1 });
 }
 
 export async function getAgent(model) {
