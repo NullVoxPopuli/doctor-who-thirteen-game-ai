@@ -40,7 +40,8 @@
     "ember-concurrency-decorators": "2.0.1",
     "ember-concurrency-async": "0.3.0",
     "ember-concurrency-ts": "0.2.0",
-    "git-rev-sync": "2.0.0"
+    "git-rev-sync": "2.0.0",
+    "random": "2.2.0"
   },
   "resolutions": {
     "@tensorflow/tfjs": "2.0.1"

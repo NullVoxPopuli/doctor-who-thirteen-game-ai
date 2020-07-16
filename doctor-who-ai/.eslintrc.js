@@ -58,6 +58,7 @@ const typescript = {
 
     // prefer inference
     '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
 
     ...prettier.rules,
   },
@@ -75,6 +76,10 @@ module.exports = {
     {
       files: ['app/**/*.ts', 'types/**/*.d.ts'],
       ...typescript,
+      rules: {
+        ...base.rules,
+        ...typescript.rules,
+      },
     },
     {
       files: ['workers/**/*.js', 'workers/**/*.ts'],

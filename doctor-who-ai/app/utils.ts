@@ -22,6 +22,7 @@ export const DOCTOR_NUMBER_MAP = {
   12: '11 - Matt Smith',
   13: '12 - Peter Capaldi',
   14: '13 - Jodie Whittaker',
+  15: '14 - ???',
 } as const;
 
 type Index = keyof typeof DOCTOR_NUMBER_MAP;

@@ -1,8 +1,14 @@
 import Service, { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+
 import { timeout } from 'ember-concurrency';
 import { restartableTask } from 'ember-concurrency-decorators';
+import { taskFor } from 'ember-concurrency-ts';
+
+import type AIWorker from './ai-worker';
+import type Game from './game';
+import type GameHistory from './history';
 
 export const BOT = {
   RNN: 'rnn',
@@ -15,21 +21,21 @@ export const OPTIONS = {
 };
 
 export default class Bot extends Service {
-  @service aiWorker;
-  @service game;
-  @service history;
+  @service aiWorker!: AIWorker;
+  @service game!: Game;
+  @service history!: GameHistory;
 
   @tracked isAutoRetrying = false;
   @tracked currentBot = BOT.RNN;
 
   @action
   play() {
-    this.gameLoop.perform();
+    taskFor(this.gameLoop).perform();
   }
 
   @action
   stop() {
-    this.gameLoop.cancelAll();
+    taskFor(this.gameLoop).cancelAll();
   }
 
   @action
