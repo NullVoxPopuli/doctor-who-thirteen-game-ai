@@ -76,5 +76,3 @@ export async function train100Games(game: Game2048) {
     requestIdleCallback(callback);
   });
 }
-
-

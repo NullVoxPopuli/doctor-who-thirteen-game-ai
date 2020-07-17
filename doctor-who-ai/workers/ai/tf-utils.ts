@@ -46,4 +46,3 @@ function createNetwork() {
 export function predict(network: tf.Sequential, inputs: tf.Tensor1D) {
   return tf.tidy(() => network.predict(inputs));
 }
-

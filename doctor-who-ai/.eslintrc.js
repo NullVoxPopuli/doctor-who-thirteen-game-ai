@@ -28,6 +28,7 @@ const base = {
   rules: {
     'prefer-const': 'off', // const has misleading safety implications
     'getter-return': ['error', { allowImplicit: true }],
+    'no-unused-vars': 'off', // handled be typescript?
     'no-console': [
       'error',
       { allow: ['debug', 'warn', 'error', 'info', 'group', 'groupEnd', 'groupCollapsed'] },
