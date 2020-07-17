@@ -36,12 +36,11 @@ export interface Config {
   /**
    * How many games to keep in memory
    */
-  memorySize: number;
+  gameMemorySize: number;
+
+  /**
+   * How many moves per game to keep in memory
+   */
+  moveMemorySize: number;
 }
 
-export type SampleMemory = {
-  state: tf.Tensor1D;
-  action: DirectionKey;
-  reward: number;
-  nextState: tf.Tensor1D | null;
-};
