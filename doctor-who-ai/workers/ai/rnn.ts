@@ -41,8 +41,8 @@ export async function train100Games(game: Game2048) {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 10;
-  let gamesPerBatch = 20;
+  let batches = 5;
+  let gamesPerBatch = 40;
   let total = batches * gamesPerBatch;
   // work has to be batched, cause the browser tab
   // keeps crashing
@@ -95,19 +95,25 @@ async function trainABit(originalGame: Game2048) {
   let clonedGame = clone(originalGame);
   let gameManager = fakeGameFrom(clonedGame);
 
+  let totalReward = 0;
+
   while (!gameManager.over) {
     moves++;
 
     let previousGame = clone(gameManager);
-    let move = await getMove(gameManager);
+    let inputs = gameTo1DArray(gameManager);
+    let moveIndex = await agent.step(inputs);
+    let move = ALL_MOVES[moveIndex];
 
     executeMove(gameManager, move);
 
     let internalMove = MOVE_KEY_MAP[move];
     let reward = calculateReward(internalMove, previousGame, gameManager);
 
-    agent.reward(reward);
+    totalReward += reward;
   }
+
+  agent.reward(totalReward);
 
   iterations++;
 
@@ -135,6 +141,14 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
     };
   }
 
+  if (currentGame && currentGame.over) {
+    if (currentGame.won) {
+      return 1;
+    } else {
+      return -1;
+    }
+  }
+
   // if (clonedGame.over) {
   //   if (clonedGame.won) {
   //     return 1;
@@ -145,8 +159,9 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
 
   if (!moveData.wasMoved) {
     // strongly discourage invalid moves
-    return -1;
+    return -0.5;
   }
+
 
   let grouped = groupByValue(originalGame);
   let newGrouped = groupByValue(moveData.model);
@@ -155,9 +170,9 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
   let newHighest = Math.max(...Object.keys(newGrouped));
 
   // highest two were merged, we have a new highest
-  if (newHighest > highest) {
-    return 1;
-  }
+  // if (newHighest > highest) {
+  //   return 1;
+  // }
 
   // for each value, determimne if they've been merged
   // highest first

@@ -68,8 +68,8 @@ function createNetwork() {
    */
   const modelFitConfig = {
     // Exactly the same idea here by using tfjs's model's
-    epochs: 1, // fit config.
-    stepsPerEpoch: 16,
+    // epochs: 1, // fit config.
+    // stepsPerEpoch: 16,
   };
 
   const numActions = 3; // The number of actions your agent can choose to do
@@ -103,8 +103,8 @@ function createNetwork() {
 }
 
 const trainingOptions = {
-  batchSize: 32,
-  epochs: 16,
+  // batchSize: 32,
+  // epochs: 16,
 };
 
 export async function train(network) {
@@ -116,8 +116,8 @@ export async function getAgent(model) {
   // fit your needs ...
 
   const teacherConfig = {
-    lessonsQuantity: 100, // Number of training lessons before only testing agent
-    lessonsLength: 100, // The length of each lesson (in quantity of updates)
+    lessonsQuantity: 100000, // Number of training lessons before only testing agent
+    lessonsLength: 1000, // The length of each lesson (in quantity of updates)
     lessonsWithRandom: 5, // How many random lessons before updating epsilon's value
     epsilon: 1, // Q-Learning values and so on ...
     epsilonDecay: 0.995, // (Random factor epsilon, decaying over time)
@@ -128,7 +128,7 @@ export async function getAgent(model) {
   const agentConfig = {
     model: model, // Our model corresponding to the agent
     agentConfig: {
-      memorySize: 5000, // The size of the agent's memory (Q-Learning)
+      memorySize: 10000, // The size of the agent's memory (Q-Learning)
       batchSize: 16, // How many tensors will be given to the network when fit
       temporalWindow: 1, // The temporal window giving previous inputs & actions
     },
