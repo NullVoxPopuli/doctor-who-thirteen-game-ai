@@ -127,7 +127,7 @@ async function trainABit(originalGame: Game2048) {
     score: gameManager.score,
     moves,
     totalNonMoves,
-    percentValidMoves: Math.round(((totalNonMoves - moves) / moves) * 100),
+    percentValidMoves: Math.round(((moves - totalNonMoves) / moves) * 100),
   };
 }
 
