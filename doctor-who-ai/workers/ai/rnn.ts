@@ -150,7 +150,7 @@ const moveAndCalculateReward = (move: DirectionKey, currentGame: Game2048) => {
   }
 
   let grouped = groupByValue(previousGame);
-  let newGrouped = groupByValue(moveData.model);
+  let newGrouped = groupByValue(currentGame);
 
   let highest = Math.max(...Object.keys(grouped));
   let newHighest = Math.max(...Object.keys(newGrouped));

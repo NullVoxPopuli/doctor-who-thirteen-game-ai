@@ -128,7 +128,7 @@ export async function getAgent(model) {
   const agentConfig = {
     model: model, // Our model corresponding to the agent
     agentConfig: {
-      memorySize: 1000, // The size of the agent's memory (Q-Learning)
+      memorySize: 5000, // The size of the agent's memory (Q-Learning)
       batchSize: 16, // How many tensors will be given to the network when fit
       temporalWindow: 1, // The temporal window giving previous inputs & actions
     },
