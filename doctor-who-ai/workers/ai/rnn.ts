@@ -1,4 +1,4 @@
-// import tf from '@tensorflow/tfjs';
+import tf from '@tensorflow/tfjs';
 // import sarsa from 'sarsa';
 
 import { useGPU, getNetwork, getAgent, save } from './tf-utils';
@@ -91,7 +91,7 @@ async function getMove(game: Game2048): Promise<DirectionKey> {
 
 async function trainABit(originalGame: Game2048) {
   let moves = 0;
-  let start = new Date().getDate();
+  // let start = new Date().getDate();
   let clonedGame = clone(originalGame);
   let gameManager = fakeGameFrom(clonedGame);
 
@@ -110,18 +110,22 @@ async function trainABit(originalGame: Game2048) {
     let internalMove = MOVE_KEY_MAP[move];
     let reward = calculateReward(internalMove, previousGame, gameManager);
 
+    tf.tidy(() => {
+      agent.reward(reward);
+    });
     totalReward += reward;
   }
 
-  agent.reward(totalReward);
+  // agent.reward(totalReward);
 
   iterations++;
 
   return {
     moves,
+    totalReward,
     numTrainedGames: iterations,
     score: gameManager.score,
-    time: new Date().getDate() - start,
+    // time: new Date().getDate() - start,
   };
 }
 
@@ -141,14 +145,6 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
     };
   }
 
-  if (currentGame && currentGame.over) {
-    if (currentGame.won) {
-      return 1;
-    } else {
-      return -1;
-    }
-  }
-
   // if (clonedGame.over) {
   //   if (clonedGame.won) {
   //     return 1;
@@ -158,16 +154,15 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
   // }
 
   if (!moveData.wasMoved) {
-    // strongly discourage invalid moves
-    return -0.5;
+    return 0;
   }
 
 
-  let grouped = groupByValue(originalGame);
-  let newGrouped = groupByValue(moveData.model);
+  // let grouped = groupByValue(originalGame);
+  // let newGrouped = groupByValue(moveData.model);
 
-  let highest = Math.max(...Object.keys(grouped));
-  let newHighest = Math.max(...Object.keys(newGrouped));
+  // let highest = Math.max(...Object.keys(grouped));
+  // let newHighest = Math.max(...Object.keys(newGrouped));
 
   // highest two were merged, we have a new highest
   // if (newHighest > highest) {
@@ -193,11 +188,14 @@ const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame
   // let bestPossibleScore = bestPossibleMove.score;
 
   // if (moveData.score >= bestPossibleScore) {
-  //   return 1;
+    // return 1;
   // }
 
+  // let scoreDiff = moveData.score - originalGame.score;
+
   if (moveData.score > originalGame.score) {
-    return 1 - originalGame.score / moveData.score;
+    return 1;
+    // return 1 - originalGame.score / moveData.score;
 
     // Provide a bigger reward the higher the merge value is
 
