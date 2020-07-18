@@ -96,118 +96,76 @@ async function trainABit(originalGame: Game2048) {
   let gameManager = fakeGameFrom(clonedGame);
 
   let totalReward = 0;
+  let totalNonMoves = 0;
 
   while (!gameManager.over) {
     moves++;
 
-    let previousGame = clone(gameManager);
     let inputs = gameTo1DArray(gameManager);
     let moveIndex = await agent.step(inputs);
     let move = ALL_MOVES[moveIndex];
 
-    executeMove(gameManager, move);
+    let { reward, wasMoved } = moveAndCalculateReward(move, gameManager);
 
-    let internalMove = MOVE_KEY_MAP[move];
-    let reward = calculateReward(internalMove, previousGame, gameManager);
+    executeMove(gameManager, move);
 
     tf.tidy(() => {
       agent.reward(reward);
     });
+
+    if (!wasMoved) {
+      totalNonMoves += 1;
+    }
+
     totalReward += reward;
   }
-
-  // agent.reward(totalReward);
 
   iterations++;
 
   return {
     moves,
     totalReward,
+    totalNonMoves,
     numTrainedGames: iterations,
     score: gameManager.score,
-    // time: new Date().getDate() - start,
   };
 }
 
-const calculateReward = (move: InternalMove, originalGame: Game2048, currentGame: Game2048) => {
+const moveAndCalculateReward = (move: DirectionKey, currentGame: Game2048) => {
   let moveData;
-  let clonedGame;
+  let previousGame = clone(currentGame);
 
-  if (!currentGame) {
-    clonedGame = clone(originalGame);
-    moveData = imitateMove(clonedGame, move);
-  } else {
-    clonedGame = currentGame;
-    moveData = {
-      model: currentGame,
-      score: currentGame.score,
-      wasMoved: !isEqual(currentGame.serialize().grid.cells, originalGame.grid.cells),
-    };
-  }
+  executeMove(currentGame, move);
 
-  // if (clonedGame.over) {
-  //   if (clonedGame.won) {
-  //     return 1;
-  //   } else {
-  //     return -1;
-  //   }
-  // }
+  moveData = {
+    currentScore: currentGame.score,
+    previousScore: previousGame.score,
+    scoreChange: currentGame.score - previousGame.score,
+    wasMoved: false,
+  };
+  moveData.wasMoved = moveData.scoreChange !== 0;
 
   if (!moveData.wasMoved) {
-    return 0;
+    return { reward: -0.05, ...moveData };
   }
 
+  let grouped = groupByValue(previousGame);
+  let newGrouped = groupByValue(moveData.model);
 
-  // let grouped = groupByValue(originalGame);
-  // let newGrouped = groupByValue(moveData.model);
-
-  // let highest = Math.max(...Object.keys(grouped));
-  // let newHighest = Math.max(...Object.keys(newGrouped));
+  let highest = Math.max(...Object.keys(grouped));
+  let newHighest = Math.max(...Object.keys(newGrouped));
 
   // highest two were merged, we have a new highest
-  // if (newHighest > highest) {
-  //   return 1;
-  // }
+  if (newHighest > highest) {
+    return { reward: 1, ...moveData };
+  }
 
-  // for each value, determimne if they've been merged
-  // highest first
-  // let currentValues = Object.keys(newGrouped).sort((a, b) => b - a);
-
-  // let likelyWontMakeItTo = 15; // 2 ^ 30 -- need an upper bound for rewarding
-
-  // for (let value of currentValues) {
-  //   // what if it previously didn't exist? but still isn't highest?
-  //   if (newGrouped[value] > (grouped[value] || 0)) {
-  //     // log2 converts big number to small number
-  //     // SEE: inverse of VALUE_MAP
-  //     return Math.log2(value) / likelyWontMakeItTo;
-  //   }
-  // }
-
-  // let bestPossibleMove = outcomesForEachMove(originalGame)[0] || {};
-  // let bestPossibleScore = bestPossibleMove.score;
-
-  // if (moveData.score >= bestPossibleScore) {
-    // return 1;
-  // }
-
-  // let scoreDiff = moveData.score - originalGame.score;
-
-  if (moveData.score > originalGame.score) {
-    return 1;
-    // return 1 - originalGame.score / moveData.score;
-
-    // Provide a bigger reward the higher the merge value is
-
-    // let additionalPoints = (moveData.score = originalGame.score);
-
-    // let fractionalScore = additionalPoints / Math.pow(2, 13); // highest possible single merge score;
-
-    // return fractionalScore > 1 ? 1 : fractionalScore;
+  if (currentGame.score > previousGame.score) {
+    return { reward: 0.5, ...moveData };
   }
 
   // next score is equal to current
   // it's possible that we need to do something that doesn't
   // change our score before getting to something good
-  return 0; // - originalGame.score / bestPossibleScore;
+  return { reward: 0, ...moveData };
 };
