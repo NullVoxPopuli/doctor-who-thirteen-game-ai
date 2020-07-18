@@ -95,7 +95,7 @@ async function trainABit(originalGame: Game2048) {
   let clonedGame = clone(originalGame);
   let gameManager = fakeGameFrom(clonedGame);
 
-  let totalReward = 0;
+  // let totalReward = 0;
   let totalNonMoves = 0;
 
   while (!gameManager.over) {
@@ -117,17 +117,17 @@ async function trainABit(originalGame: Game2048) {
       totalNonMoves += 1;
     }
 
-    totalReward += reward;
+    // totalReward += reward;
   }
 
   iterations++;
 
   return {
-    moves,
-    totalReward,
-    totalNonMoves,
-    numTrainedGames: iterations,
+    totalGames: iterations,
     score: gameManager.score,
+    moves,
+    totalNonMoves,
+    percentValidMoves: Math.round(((totalNonMoves - moves) / moves) * 100),
   };
 }
 
