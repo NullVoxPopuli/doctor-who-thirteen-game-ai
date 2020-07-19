@@ -95,7 +95,7 @@ async function trainABit(originalGame: Game2048) {
   let clonedGame = clone(originalGame);
   let gameManager = fakeGameFrom(clonedGame);
 
-  // let totalReward = 0;
+  let totalReward = 0;
   let totalNonMoves = 0;
 
   while (!gameManager.over) {
@@ -109,16 +109,16 @@ async function trainABit(originalGame: Game2048) {
 
     executeMove(gameManager, move);
 
-    tf.tidy(() => {
-      agent.reward(reward);
-    });
-
     if (!wasMoved) {
       totalNonMoves += 1;
     }
 
-    // totalReward += reward;
+    totalReward += reward;
   }
+
+  tf.tidy(() => {
+    agent.reward(totalReward);
+  });
 
   iterations++;
 
@@ -146,7 +146,7 @@ const moveAndCalculateReward = (move: DirectionKey, currentGame: Game2048) => {
   moveData.wasMoved = moveData.scoreChange !== 0;
 
   if (!moveData.wasMoved) {
-    return { reward: -0.05, ...moveData };
+    return { reward: 0.0, ...moveData };
   }
 
   let grouped = groupByValue(previousGame);
