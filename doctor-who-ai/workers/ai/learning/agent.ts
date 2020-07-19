@@ -12,11 +12,11 @@ export class Agent {
     this.model = model;
   }
 
-  fit(gameState: tf.Tensor1D, rankedMoves: tf.Tensor1D) {
+  fit(gameState: tf.Tensor, rankedMoves: tf.Tensor) {
     return this.model.fit(gameState, rankedMoves);
   }
 
-  act(inputs: tf.Tensor1D, epsilon: number = Infinity) {
+  act(inputs: tf.Tensor, epsilon: number = Infinity) {
     let { numActions } = this.config;
 
     if (Math.random() < epsilon) {

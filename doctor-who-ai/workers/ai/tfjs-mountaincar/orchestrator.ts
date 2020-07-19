@@ -98,7 +98,7 @@ export class Orchestrator {
 
       currentQ[action] = nextState ? reward + this.discountRate * qsad[index].max() : reward;
       x.push(state.dataSync());
-      y.push(currentQ);
+      y.push(currentQ.dataSync());
     });
 
     // Clean unused tensors
@@ -110,7 +110,7 @@ export class Orchestrator {
     let outputs = tf.tensor2d(y, [y.length, NUM_ACTIONS]);
 
     // Learn the Q(s, a) values given associated discounted rewards
-    await this.model.fit(inputs.reshape([16]), outputs.reshape([16]));
+    await this.model.fit(inputs, outputs);
 
     inputs.dispose();
     outputs.dispose();
