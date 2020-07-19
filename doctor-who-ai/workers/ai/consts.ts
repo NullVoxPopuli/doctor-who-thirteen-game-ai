@@ -18,3 +18,17 @@ export const MOVE_KEY_MAP = {
 } as const;
 
 export type InternalMove = typeof MOVE_KEY_MAP[DirectionKey];
+
+export const VALUE_MAP = {
+  0: 0,
+  null: 0,
+  /* eslint-disable prettier/prettier */
+  2:     1, 4:      2, 8:      3, 16:    4,
+  32:    5, 64:     6, 128:    7, 256:   8,
+  512:   9, 1024:  10, 2048:  11, 4096: 12,
+  8192: 13, 16384: 14, 32768: 15,
+  /* eslint-enable prettier/prettier */
+} as const;
+
+type Value = keyof typeof VALUE_MAP;
+export type ValueIndex = typeof VALUE_MAP[Value];

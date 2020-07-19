@@ -52,7 +52,14 @@ export default class Bot extends Service {
     yield this.aiWorker.train(this.game.state);
 
     while (!this.game.isGameOver) {
+      // let the external code calculate stuff?
+      yield timeout(50);
+
       let data = yield this.requestMove();
+
+      if (!data) {
+        continue;
+      }
 
       if (!data.move) {
         console.error(`No move was generated`, data);
@@ -66,8 +73,6 @@ export default class Bot extends Service {
 
       this.game.pressKey(data.move);
 
-      // let the external code calculate stuff?
-      yield timeout(50);
     }
 
     this.autoRetry();
