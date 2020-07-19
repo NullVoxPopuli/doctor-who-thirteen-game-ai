@@ -68,8 +68,8 @@ function createNetwork() {
    */
   const modelFitConfig = {
     // Exactly the same idea here by using tfjs's model's
-    // epochs: 1, // fit config.
-    // stepsPerEpoch: 16,
+    epochs: 1, // fit config.
+    stepsPerEpoch: 16,
   };
 
   const numActions = 3; // The number of actions your agent can choose to do
@@ -83,13 +83,13 @@ function createNetwork() {
 
   network.InputShape = [totalInputSize];
   network.addNeuralNetworkLayers([
-    { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
+    // { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
     { type: 'dense', units: Math.pow(2, 11), activation: 'relu' },
     { type: 'dense', units: Math.pow(2, 10), activation: 'relu' },
     { type: 'dense', units: Math.pow(2, 9), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 6), activation: 'relu' },
-    { type: 'dense', units: Math.pow(2, 5), activation: 'relu' },
+    // { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
+    // { type: 'dense', units: Math.pow(2, 6), activation: 'relu' },
+    // { type: 'dense', units: Math.pow(2, 5), activation: 'relu' },
     { type: 'dense', units: numActions, activation: 'softmax' },
   ]);
   // Now we initialize our model, and start adding layers
@@ -103,8 +103,8 @@ function createNetwork() {
 }
 
 const trainingOptions = {
-  // batchSize: 32,
-  // epochs: 16,
+  batchSize: 32,
+  epochs: 1,
 };
 
 export async function train(network) {
@@ -117,8 +117,8 @@ export async function getAgent(model) {
 
   const teacherConfig = {
     lessonsQuantity: 100000, // Number of training lessons before only testing agent
-    lessonsLength: 1000, // The length of each lesson (in quantity of updates)
-    lessonsWithRandom: 5, // How many random lessons before updating epsilon's value
+    lessonsLength: 20, // The length of each lesson (in quantity of updates)
+    lessonsWithRandom: 1, // How many random lessons before updating epsilon's value
     epsilon: 1, // Q-Learning values and so on ...
     epsilonDecay: 0.995, // (Random factor epsilon, decaying over time)
     epsilonMin: 0.7,
@@ -129,7 +129,7 @@ export async function getAgent(model) {
     model: model, // Our model corresponding to the agent
     agentConfig: {
       memorySize: 5000, // The size of the agent's memory (Q-Learning)
-      batchSize: 16, // How many tensors will be given to the network when fit
+      batchSize: 32, // How many tensors will be given to the network when fit
       temporalWindow: 1, // The temporal window giving previous inputs & actions
     },
   };

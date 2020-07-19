@@ -2,9 +2,9 @@ import tf from '@tensorflow/tfjs';
 // import sarsa from 'sarsa';
 
 import { useGPU, getNetwork, getAgent, save } from './tf-utils';
-import { ALL_MOVES, MOVE_KEY_MAP } from './consts';
+import { ALL_MOVES, MOVE_KEY_MAP, VALUE_MAP } from './consts';
 
-import type { DirectionKey, InternalMove } from './consts';
+import type { DirectionKey, InternalMove, ValueIndex } from './consts';
 
 import { clone, groupByValue, gameTo1DArray, isEqual } from './utils';
 
@@ -33,6 +33,16 @@ async function ensureNetwork() {
   }
 }
 
+let totals = {
+  score: 0,
+  nonMoves: 0,
+};
+
+let averages = {
+  score: 0,
+  nonMoves: 0,
+};
+
 export async function train100Games(game: Game2048) {
   console.time('Training');
   Object.freeze(game.grid);
@@ -54,7 +64,14 @@ export async function train100Games(game: Game2048) {
       games++;
       let trainingResult = await trainOnce();
 
-      console.debug(`${total - games} left until displayed game. Last: `, trainingResult);
+      let { totalGames, score, moves, totalNonMoves } = trainingResult;
+
+      totals.score += score;
+      totals.nonMoves += totalNonMoves;
+
+      console.debug(
+        `${total - games} left until displayed game. ${totalGames} total | Score: ${score}`
+      );
     }
   };
 
@@ -81,8 +98,31 @@ export async function train100Games(game: Game2048) {
   });
 }
 
+export const gameToTensor = (game: Game2048) => {
+  let result = [];
+  let cells = game.grid.cells;
+
+  for (let i = 0; i < cells.length; i++) {
+    // result[i] = [];
+
+    for (let j = 0; j < cells.length; j++) {
+      let cell = cells[i][j];
+
+      let value = cell ? cell.value || 0 : (0 as const);
+      let k = VALUE_MAP[value] || 0;
+
+      // result[i][j][k] = 1;
+      // result[i][j] = k;
+      result.push(k);
+    }
+  }
+
+  return result;
+  // return tf.tensor1d(result);
+};
+
 async function getMove(game: Game2048): Promise<DirectionKey> {
-  let inputs = gameTo1DArray(game);
+  let inputs = gameToTensor(game);
   let moveIndex = await agent.step(inputs);
   let move = ALL_MOVES[moveIndex];
 
@@ -101,7 +141,7 @@ async function trainABit(originalGame: Game2048) {
   while (!gameManager.over) {
     moves++;
 
-    let inputs = gameTo1DArray(gameManager);
+    let inputs = gameToTensor(gameManager);
     let moveIndex = await agent.step(inputs);
     let move = ALL_MOVES[moveIndex];
 
@@ -113,18 +153,19 @@ async function trainABit(originalGame: Game2048) {
       totalNonMoves += 1;
     }
 
+    tf.tidy(() => {
+      agent.reward(reward);
+    });
+
     totalReward += reward;
   }
-
-  tf.tidy(() => {
-    agent.reward(totalReward);
-  });
 
   iterations++;
 
   return {
     totalGames: iterations,
     score: gameManager.score,
+    totalReward,
     moves,
     totalNonMoves,
     percentValidMoves: Math.round(((moves - totalNonMoves) / moves) * 100),
