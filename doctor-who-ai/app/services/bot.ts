@@ -54,7 +54,7 @@ export default class Bot extends Service {
     while (!this.game.isGameOver) {
       let data = yield this.requestMove();
 
-      if (!data.move) {
+      if (data && !data.move) {
         console.error(`No move was generated`, data);
 
         return;
