@@ -44,9 +44,9 @@ module.exports = function (defaults) {
     },
   });
 
-  app.trees.public = new UnwatchedDir('public');
-  app.trees.vendor = new UnwatchedDir('public');
-  app.trees.dist = new UnwatchedDir('public');
+  // app.trees.public = new UnwatchedDir('public');
+  // app.trees.vendor = new UnwatchedDir('public');
+  // app.trees.dist = new UnwatchedDir('public');
 
   app.import('node_modules/chartist-plugin-legend/chartist-plugin-legend.js');
 

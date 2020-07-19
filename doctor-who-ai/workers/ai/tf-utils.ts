@@ -1,4 +1,4 @@
-import tf from '@tensorflow/tfjs';
+import tf, { model } from '@tensorflow/tfjs';
 
 const fileName = 're-improve.model';
 const dataLocation = `downloads://${fileName}`;
@@ -17,32 +17,60 @@ export async function save(network: tf.LayersModel) {
 }
 
 export async function getNetwork(): Promise<tf.LayersModel> {
+  let model;
+
   try {
-    return await tf.loadLayersModel(fileInfoLocation);
+    // model = await tf.loadLayersModel(fileInfoLocation);
   } catch (e) {
     console.debug(e);
-
-    return createNetwork();
   }
-}
 
-function createNetwork() {
-  let model = tf.sequential();
+  if (!model) {
+    model = createNetwork();
+  }
 
-  model.add(tf.layers.dense({ units: Math.pow(2, 9), inputShape: [16], activation: 'relu' }));
-  model.add(tf.layers.dense({ units: Math.pow(2, 11), activation: 'relu' }));
-  model.add(tf.layers.dense({ units: Math.pow(2, 10), activation: 'relu' }));
-  model.add(tf.layers.dense({ units: Math.pow(2, 9), activation: 'relu' }));
-  model.add(tf.layers.dense({ units: Math.pow(2, 8), activation: 'relu' }));
-  model.add(tf.layers.dense({ units: Math.pow(2, 6), activation: 'relu' }));
-  model.add(tf.layers.dense({ units: Math.pow(2, 5), activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 4, activation: 'softmax' }));
-
-  model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+  model.summary();
 
   return model;
 }
 
-export function predict(network: tf.Sequential, inputs: tf.Tensor1D) {
-  return tf.tidy(() => network.predict(inputs));
+function createNetwork() {
+  /**
+   * ML5
+   */
+  // return ml5.neuralNetwork({
+  //   debug: true,
+  //   inputs: 16,
+  //   outputs: 4,
+  //   layers: [
+  //     { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
+  //     { type: 'dense', units: Math.pow(2, 11), activation: 'relu' },
+  //     { type: 'dense', units: Math.pow(2, 10), activation: 'relu' },
+  //     { type: 'dense', units: Math.pow(2, 9), activation: 'relu' },
+  //     { type: 'dense', units: Math.pow(2, 8), activation: 'relu' },
+  //     { type: 'dense', units: Math.pow(2, 6), activation: 'relu' },
+  //     { type: 'dense', units: Math.pow(2, 5), activation: 'relu' },
+  //     { type: 'dense', units: 4, activation: 'softmax' },
+  //   ],
+  // });
+
+  let layer = tf.layers.dense;
+
+  let model = tf.sequential({
+    name: '2048-move-network',
+    layers: [
+      layer({ name: 'input', units: Math.pow(2, 9), inputShape: [16], activation: 'relu' }),
+      layer({ name: 'hidden-1', units: Math.pow(2, 11), activation: 'relu' }),
+      layer({ name: 'hidden-2', units: Math.pow(2, 10), activation: 'relu' }),
+      layer({ name: 'hidden-3', units: Math.pow(2, 9), activation: 'relu' }),
+      // layer({ units: Math.pow(2, 8), activation: 'relu' }),
+      // layer({ units: Math.pow(2, 6), activation: 'relu' }),
+      // layer({ units: Math.pow(2, 5), activation: 'relu' }),
+      layer({ name: 'output', units: 4, activation: 'softmax' }),
+    ],
+  });
+
+  model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+
+  return model;
 }

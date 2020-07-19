@@ -2,7 +2,9 @@ import tf from '@tensorflow/tfjs';
 
 import { useGPU, getNetwork, save } from './tf-utils';
 
+import { Agent } from './learning/agent';
 import { GameTrainer } from './game-trainer';
+import { Orchestrator } from './tfjs-mountaincar/orchestrator';
 
 let network!: tf.LayersModel;
 let agent: GameTrainer;
@@ -44,7 +46,7 @@ export async function train100Games(game: Game2048) {
   // work has to be batched, cause the browser tab
   // keeps crashing
   // can this be moved to a web worker?
-  let trainOnce = () => agent.run(game);
+  let trainOnce = () => agent.orchestrator.run(game);
 
   let trainBatch = async () => {
     for (let i = 0; i < gamesPerBatch; i++) {

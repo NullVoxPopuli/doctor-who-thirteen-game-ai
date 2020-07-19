@@ -1,3 +1,5 @@
+import tf from '@tensorflow/tfjs';
+
 export const voidFn = () => undefined;
 export const clone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
@@ -48,3 +50,26 @@ export async function loadDependencies(dependencies: string[]) {
 
   self.postMessage({ type: 'ack' });
 }
+
+export function gameToTensor(game: Game2048) {
+  let result: number[][] = [];
+  let cells = game.grid.cells;
+
+  for (let i = 0; i < cells.length; i++) {
+    result[i] = [];
+
+    for (let j = 0; j < cells.length; j++) {
+      let cell = cells[i][j];
+
+      let value = cell?.value || 0;
+      let k = value === 0 ? 0 : Math.log2(value);
+
+      // result[i][j][k] = 1;
+      result[i][j] = k;
+      // result.push(k);
+    }
+  }
+
+  return tf.tensor2d(result);
+}
+

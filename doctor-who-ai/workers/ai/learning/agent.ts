@@ -13,10 +13,10 @@ export class Agent {
   }
 
   fit(gameState: tf.Tensor1D, rankedMoves: tf.Tensor1D) {
-    return this.model.fit(gameState, rankedMoves, { batchSize: 32, epochs: 1 });
+    return this.model.fit(gameState, rankedMoves);
   }
 
-  act(inputs: tf.Tensor1D, epsilon: number) {
+  act(inputs: tf.Tensor1D, epsilon: number = Infinity) {
     let { numActions } = this.config;
 
     if (Math.random() < epsilon) {
@@ -25,6 +25,28 @@ export class Agent {
 
     // ranked outputs for each of numActions
     // if numActions = 4, then there will be 4 elements in the returned array
-    return tf.tidy(() => this.model.predict(inputs));
+    // expandDims converts regular inputs into batch inputs
+    let inputData =  inputs.expandDims();
+    let output = tf.tidy(() => this.model.predict(inputData));
+
+    let moves = output.dataSync();
+
+    return highestIndex(moves);
   }
+}
+
+function highestIndex(arr: number[]) {
+  let highestIndex = 0;
+  let highest = 0;
+
+  for (let i = 0; i < arr.length; i++) {
+    let value = arr[i];
+
+    if (highest < value) {
+      highest = value;
+      highestIndex = i;
+    }
+  }
+
+  return highestIndex;
 }
