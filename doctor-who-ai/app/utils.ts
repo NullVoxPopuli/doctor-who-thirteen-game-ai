@@ -1,12 +1,3 @@
-export const VALUE_MAP = {
-  /* eslint-disable prettier/prettier */
-  2:     1, 4:      2, 8:      3, 16:    4,
-  32:    5, 64:     6, 128:    7, 256:   8,
-  512:   9, 1024:  10, 2048:  11, 4096: 12,
-  8192: 13, 16384: 14, 32768: 15,
-  /* eslint-enable prettier/prettier */
-} as const;
-
 export const DOCTOR_NUMBER_MAP = {
   1: '01 - William Hartnell',
   2: '02 - Patrick Troughton',
@@ -33,7 +24,7 @@ export function biggestTile(game: Game2048) {
 
   let value = Math.max(...tiles) as Value;
 
-  return { value, num: VALUE_MAP[value] };
+  return { value, num: Math.log2(value) };
 }
 
 export function round(num: number) {
