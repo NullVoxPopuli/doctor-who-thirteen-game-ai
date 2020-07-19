@@ -33,6 +33,13 @@ export class Agent {
 
     return highestIndex(moves);
   }
+
+  predict(inputs: tf.Tensor1D) {
+    let inputData = inputs.expandDims();
+    let output = tf.tidy(() => this.model.predict(inputData));
+
+    return output;
+  }
 }
 
 function highestIndex(arr: number[]) {

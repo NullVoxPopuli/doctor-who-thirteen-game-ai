@@ -15,7 +15,7 @@ const NUM_ACTIONS = 4;
 const NUM_STATES = 16;
 
 export class Orchestrator {
-  declare memory: Memory<any>;
+  declare memory: Memory<[tf.Tensor2D, number, number, tf.Tensor2D]>;
   declare model: Agent;
   declare eps: number;
   declare steps: number;
@@ -85,20 +85,20 @@ export class Orchestrator {
       nextState ? nextState : tf.zeros([NUM_STATES])
     );
     // Predict the values of each action at each state
-    const qsa = states.map((state) => this.model.act(state));
+    const qsa = states.map((state) => this.model.predict(state.reshape([16])));
     // Predict the values of each action at each next state
-    const qsad = nextStates.map((nextState) => this.model.act(nextState));
+    const qsad = nextStates.map((nextState) => this.model.predict(nextState.reshape([16])));
 
-    let x = new Array();
-    let y = new Array();
+    let x = new Array().fill(0);
+    let y = new Array().fill(0);
 
     // Update the states rewards with the discounted next states rewards
     batch.forEach(([state, action, reward, nextState], index) => {
       const currentQ = qsa[index];
 
-      currentQ[action] = nextState ? reward + this.discountRate * qsad[index] : reward;
+      currentQ[action] = nextState ? reward + this.discountRate * qsad[index].max() : reward;
       x.push(state.dataSync());
-      y.push(currentQ.dataSync());
+      y.push(currentQ);
     });
 
     // Clean unused tensors
@@ -106,13 +106,13 @@ export class Orchestrator {
     qsad.forEach((state) => state.dispose());
 
     // Reshape the batches to be fed to the network
-    x = tf.tensor2d(x, [x.length, NUM_STATES]);
-    y = tf.tensor2d(y, [y.length, NUM_ACTIONS]);
+    let inputs = tf.tensor2d(x, [x.length, NUM_STATES]);
+    let outputs = tf.tensor2d(y, [y.length, NUM_ACTIONS]);
 
     // Learn the Q(s, a) values given associated discounted rewards
-    await this.model.fit(x, y);
+    await this.model.fit(inputs.reshape([16]), outputs.reshape([16]));
 
-    x.dispose();
-    y.dispose();
+    inputs.dispose();
+    outputs.dispose();
   }
 }
