@@ -59,9 +59,7 @@ export class GameTrainer {
 
   async getMove(game: Game2048): Promise<DirectionKey> {
     let inputs = gameToTensor(game);
-    let moveIndex = this.model.predict(inputs);
-
-    debugger;
+    let moveIndex = this.agent.act(inputs.reshape([16]));
     let move = ALL_MOVES[moveIndex];
 
     return move;

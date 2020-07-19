@@ -75,6 +75,12 @@ export class Orchestrator {
     }
 
     await this.replay();
+
+    return {
+      score: gameManager.score,
+      moves: step,
+      eps: this.eps,
+    };
   }
 
   async replay() {
