@@ -48,13 +48,13 @@ export class Orchestrator {
    * @returns {number} Reward corresponding to the position
    */
 
-  async run(originalGame: Game2048) {
+  async run(originalGame: Game2048, gameNumber) {
     let step = 0;
 
     let clonedGame = clone(originalGame);
     let gameManager = fakeGameFrom(clonedGame);
 
-    while (step < this.maxStepsPerGame) {
+    while (!gameManager.over || step < 1000) {
       // Interaction with the environment
       let inputs = gameToTensor(gameManager);
       let move = this.model.act(inputs.reshape([16]), this.eps);
@@ -72,6 +72,11 @@ export class Orchestrator {
       this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
       step += 1;
+
+      console.group(`${gameNumber} Score: ${gameManager.score} @ ${step} moves`);
+      inputs.print();
+      state.print();
+      console.groupEnd();
     }
 
     await this.replay();

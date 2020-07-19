@@ -40,13 +40,13 @@ export async function train100Games(game: Game2048) {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 10;
+  let batches = 2;
   let gamesPerBatch = 20;
   let total = batches * gamesPerBatch;
   // work has to be batched, cause the browser tab
   // keeps crashing
   // can this be moved to a web worker?
-  let trainOnce = () => agent.orchestrator.run(game);
+  let trainOnce = () => agent.orchestrator.run(game, games);
 
   let trainBatch = async () => {
     for (let i = 0; i < gamesPerBatch; i++) {
