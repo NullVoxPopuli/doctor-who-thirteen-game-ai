@@ -26,8 +26,8 @@ async function ensureNetwork() {
     agent = new GameTrainer(network, {
       epsilon: 0.05,
       numActions: 4,
-      gameMemorySize: 100,
-      moveMemorySize: 8000,
+      gameMemorySize: 10,
+      moveMemorySize: 20,
     });
   }
 }
@@ -68,7 +68,7 @@ export async function train100Games(game: Game2048) {
           // the page is responsive
         }, 1000);
       } else {
-        // await save(network);
+        await save(network);
 
         // let the call-site continue
         console.timeEnd('Training');

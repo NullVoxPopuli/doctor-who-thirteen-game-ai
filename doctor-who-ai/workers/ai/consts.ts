@@ -9,6 +9,7 @@ type Names = keyof typeof MOVE;
 export type DirectionKey = typeof MOVE[Names];
 
 export const ALL_MOVES = [MOVE.UP, MOVE.RIGHT, MOVE.DOWN, MOVE.LEFT] as const;
+export const MOVE_NAMES = ['Up   ', 'Right', 'Down ', 'Left '] as const;
 
 export const MOVE_KEY_MAP = {
   [MOVE.UP]: 0,

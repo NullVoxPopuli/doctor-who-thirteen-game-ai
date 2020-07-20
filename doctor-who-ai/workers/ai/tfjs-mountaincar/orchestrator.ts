@@ -1,14 +1,15 @@
+import * as tf from '@tensorflow/tfjs';
+
 import { Memory } from '../learning/memory';
 import { gameToTensor, clone } from '../utils';
-import { imitateMove, executeMove, fakeGameFrom } from '../game';
+import { fakeGameFrom } from '../game';
 import { moveAndCalculateReward } from '../game-trainer';
-
-import * as tf from '@tensorflow/tfjs';
+import { MOVE_NAMES } from '../consts';
 
 import type { Agent } from '../learning/agent';
 
 const MIN_EPSILON = 0.01;
-const MAX_EPSILON = 0.2;
+const MAX_EPSILON = 0.9;
 const LAMBDA = 0.01;
 
 const NUM_ACTIONS = 4;
@@ -22,13 +23,6 @@ export class Orchestrator {
   declare maxStepsPerGame: number;
   declare discountRate: number;
 
-  /**
-   * @param {MountainCar} mountainCar
-   * @param {Model} model
-   * @param {Memory} memory
-   * @param {number} discountRate
-   * @param {number} maxStepsPerGame
-   */
   constructor(model: Agent, memory: Memory<any>, discountRate: number, maxStepsPerGame: number) {
     this.model = model;
     this.memory = memory;
@@ -43,43 +37,53 @@ export class Orchestrator {
     this.discountRate = discountRate;
   }
 
-  /**
-   * @param {number} position
-   * @returns {number} Reward corresponding to the position
-   */
-
-  async run(originalGame: Game2048, gameNumber) {
+  async run(originalGame: Game2048, gameNumber: number) {
     let step = 0;
+    let invalidMoves = 0;
 
     let clonedGame = clone(originalGame);
     let gameManager = fakeGameFrom(clonedGame);
+    let nextState: tf.Tensor2D;
 
-    while (!gameManager.over || step < 1000) {
+    while (!gameManager.over && step < 1000) {
       // Interaction with the environment
       let inputs = gameToTensor(gameManager);
       let move = this.model.act(inputs.reshape([16]), this.eps);
-      let { reward, state, over } = moveAndCalculateReward(move, gameManager);
-      let nextState = state;
+      let { reward, state, over, wasMoved } = moveAndCalculateReward(move, gameManager);
+
+      nextState = state;
 
       if (over) {
-        nextState = null;
+        nextState = undefined;
       }
 
       this.memory.add([inputs, move, reward, nextState]);
 
+      step += 1;
       this.steps += 1;
+
+      if (!wasMoved) {
+        invalidMoves++;
+      }
+
       // Exponentially decay the exploration parameter
       this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
-      step += 1;
+      if (step % 100 === 0) {
+        console.log('Replaying...');
+        await this.replay();
+      }
 
-      console.group(`${gameNumber} Score: ${gameManager.score} @ ${step} moves`);
+      console.group(
+        `${gameNumber} | ${MOVE_NAMES[move]} : ${wasMoved} -- ` +
+          `Score: ${gameManager.score} @ ${step} moves. ` +
+          `% valid ${Math.round(((step - invalidMoves) / step) * 100)} -- ` +
+          `#invalid ${invalidMoves}`
+      );
       inputs.print();
       state.print();
       console.groupEnd();
     }
-
-    await this.replay();
 
     return {
       score: gameManager.score,
@@ -90,7 +94,7 @@ export class Orchestrator {
 
   async replay() {
     // Sample from memory
-    const batch = this.memory.recallTopBy(([, , reward]) => reward);
+    const batch = this.memory.recallRandomly(50); // half
     const states = batch.map(([state, , ,]) => state);
     const nextStates = batch.map(([, , , nextState]) =>
       nextState ? nextState : tf.zeros([NUM_STATES])

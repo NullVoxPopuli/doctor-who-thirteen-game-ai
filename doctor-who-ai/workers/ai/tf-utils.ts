@@ -60,9 +60,9 @@ function createNetwork() {
     name: '2048-move-network',
     layers: [
       layer({ name: 'input', units: Math.pow(2, 9), inputShape: [16], activation: 'relu' }),
-      layer({ name: 'hidden-1', units: Math.pow(2, 11), activation: 'relu' }),
-      layer({ name: 'hidden-2', units: Math.pow(2, 10), activation: 'relu' }),
-      layer({ name: 'hidden-3', units: Math.pow(2, 9), activation: 'relu' }),
+      layer({ name: 'hidden-1', units: Math.pow(2, 5), activation: 'relu' }),
+      layer({ name: 'hidden-2', units: Math.pow(2, 6), activation: 'relu' }),
+      layer({ name: 'hidden-3', units: Math.pow(2, 7), activation: 'relu' }),
       // layer({ units: Math.pow(2, 8), activation: 'relu' }),
       // layer({ units: Math.pow(2, 6), activation: 'relu' }),
       // layer({ units: Math.pow(2, 5), activation: 'relu' }),

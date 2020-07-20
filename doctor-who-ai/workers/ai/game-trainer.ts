@@ -94,7 +94,7 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: Game2048
 
   if (!moveData.wasMoved) {
     // strongly discourage invalid moves
-    return { reward: -1, ...moveData };
+    return { reward: -1.0, ...moveData };
   }
 
   let grouped = groupByValue(previousGame);
