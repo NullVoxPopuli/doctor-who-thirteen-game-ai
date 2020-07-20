@@ -10,7 +10,7 @@ import type { Agent } from '../learning/agent';
 
 const MIN_EPSILON = 0.01;
 const MAX_EPSILON = 0.9;
-const LAMBDA = 0.01;
+const LAMBDA = 0.001;
 
 const NUM_ACTIONS = 4;
 const NUM_STATES = 16;
@@ -66,9 +66,6 @@ export class Orchestrator {
         invalidMoves++;
       }
 
-      // Exponentially decay the exploration parameter
-      this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
-
       if (step % 100 === 0) {
         console.log('Replaying...');
         await this.replay();
@@ -85,6 +82,9 @@ export class Orchestrator {
       state.print();
       console.groupEnd();
     }
+
+    // Exponentially decay the exploration parameter
+    this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
     return {
       score: gameManager.score,
