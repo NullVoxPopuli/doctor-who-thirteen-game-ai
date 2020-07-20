@@ -20,7 +20,7 @@ export async function getNetwork(): Promise<tf.LayersModel> {
   let model;
 
   try {
-    // model = await tf.loadLayersModel(fileInfoLocation);
+    model = await tf.loadLayersModel(fileInfoLocation);
   } catch (e) {
     console.debug(e);
   }
@@ -29,6 +29,7 @@ export async function getNetwork(): Promise<tf.LayersModel> {
     model = createNetwork();
   }
 
+  model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
   model.summary();
 
   return model;
@@ -69,8 +70,6 @@ function createNetwork() {
       layer({ name: 'output', units: 4, activation: 'softmax' }),
     ],
   });
-
-  model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
 
   return model;
 }

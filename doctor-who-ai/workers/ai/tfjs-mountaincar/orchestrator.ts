@@ -77,8 +77,9 @@ export class Orchestrator {
       console.group(
         `${gameNumber} | ${MOVE_NAMES[move]} : ${wasMoved} -- ` +
           `Score: ${gameManager.score} @ ${step} moves. ` +
-          `% valid ${Math.round(((step - invalidMoves) / step) * 100)} -- ` +
-          `#invalid ${invalidMoves}`
+          `% valid ${Math.round(((step - invalidMoves) / step) * 100)} \n` +
+          `#invalid ${invalidMoves} -- ` +
+          `eps: ${this.eps} -- reward: ${reward}`
       );
       inputs.print();
       state.print();
