@@ -1,6 +1,6 @@
-import tf, { model } from '@tensorflow/tfjs';
+import tf from '@tensorflow/tfjs';
 
-const fileName = 're-improve.model';
+const fileName = 'larger.model';
 const dataLocation = `downloads://${fileName}`;
 const fileInfoLocation = `/${fileName}.json`;
 
@@ -60,12 +60,12 @@ function createNetwork() {
   let model = tf.sequential({
     name: '2048-move-network',
     layers: [
-      layer({ name: 'input', units: Math.pow(2, 9), inputShape: [16], activation: 'relu' }),
-      layer({ name: 'hidden-1', units: Math.pow(2, 5), activation: 'relu' }),
-      layer({ name: 'hidden-2', units: Math.pow(2, 6), activation: 'relu' }),
-      layer({ name: 'hidden-3', units: Math.pow(2, 7), activation: 'relu' }),
-      // layer({ units: Math.pow(2, 8), activation: 'relu' }),
-      // layer({ units: Math.pow(2, 6), activation: 'relu' }),
+      layer({ name: 'input', units: Math.pow(2, 10), inputShape: [16], activation: 'relu' }),
+      layer({ name: 'hidden-1', units: Math.pow(2, 10), activation: 'relu' }),
+      layer({ name: 'hidden-2', units: Math.pow(2, 9), activation: 'relu' }),
+      layer({ name: 'hidden-3', units: Math.pow(2, 8), activation: 'relu' }),
+      layer({ name: 'hidden-4', units: Math.pow(2, 7), activation: 'relu' }),
+      layer({ name: 'hidden-5', units: Math.pow(2, 6), activation: 'relu' }),
       // layer({ units: Math.pow(2, 5), activation: 'relu' }),
       layer({ name: 'output', units: 4, activation: 'softmax' }),
     ],

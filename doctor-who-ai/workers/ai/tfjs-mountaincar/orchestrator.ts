@@ -15,6 +15,9 @@ const LAMBDA = 0.000001;
 const NUM_ACTIONS = 4;
 const NUM_STATES = 16;
 
+let totalMoves = 0;
+let totalInvalidMoves = 0;
+
 export class Orchestrator {
   declare memory: Memory<[tf.Tensor2D, number, number, tf.Tensor2D]>;
   declare model: Agent;
@@ -60,10 +63,12 @@ export class Orchestrator {
       this.memory.add([inputs, move, reward, nextState]);
 
       step += 1;
+      totalMoves++;
       this.steps += 1;
 
       if (!wasMoved) {
         invalidMoves++;
+        totalInvalidMoves++;
       }
 
       if (step % 1000 === 0) {
@@ -72,11 +77,12 @@ export class Orchestrator {
       }
 
       console.group(
-        `${gameNumber} | ${MOVE_NAMES[move]} : ${wasMoved} -- ` +
+        `Move: ${totalMoves} = ${MOVE_NAMES[move]} ${wasMoved ? 'succeeded  ' : 'was invalid'}` +
+          `${Math.round(((totalMoves - totalInvalidMoves) / totalMoves) * 100)}% total valid moves.` +
+          '\n' +
+          `Epsilon: ${this.eps} | Reward: ${reward} \n` +
           `Score: ${gameManager.score} @ ${step} moves. ` +
-          `% valid ${Math.round(((step - invalidMoves) / step) * 100)} --` +
-          `#invalid ${invalidMoves} -- ` +
-          `eps: ${this.eps} -- reward: ${reward}`
+          `Move % valid: ${Math.round(((step - invalidMoves) / step) * 100)}`
       );
       inputs.print();
       state.print();
