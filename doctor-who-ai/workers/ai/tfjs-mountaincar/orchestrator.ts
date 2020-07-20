@@ -83,6 +83,7 @@ export class Orchestrator {
       console.groupEnd();
     }
 
+    // TODO: change epsilon based on the percent of invalid moves
     // Exponentially decay the exploration parameter
     this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
