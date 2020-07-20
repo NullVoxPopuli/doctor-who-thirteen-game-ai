@@ -34,7 +34,7 @@ function sample(arr: unknown[], count: number) {
   let results = [];
   let previousIndicies: number[] = [];
 
-  while (results.length < count || results.length === arr.length) {
+  while (results.length < count && results.length !== arr.length) {
     let index = random.int(0, arr.length - 1);
 
     if (previousIndicies.includes(index)) {
