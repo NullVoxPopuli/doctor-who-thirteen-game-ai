@@ -10,7 +10,7 @@ import type { Agent } from '../learning/agent';
 
 const MIN_EPSILON = 0.01;
 const MAX_EPSILON = 0.9;
-const LAMBDA = 0.001;
+const LAMBDA = 0.000001;
 
 const NUM_ACTIONS = 4;
 const NUM_STATES = 16;
@@ -66,7 +66,7 @@ export class Orchestrator {
         invalidMoves++;
       }
 
-      if (step % 100 === 0) {
+      if (step % 1000 === 0) {
         console.log('Replaying...');
         await this.replay();
       }
@@ -74,7 +74,7 @@ export class Orchestrator {
       console.group(
         `${gameNumber} | ${MOVE_NAMES[move]} : ${wasMoved} -- ` +
           `Score: ${gameManager.score} @ ${step} moves. ` +
-          `% valid ${Math.round(((step - invalidMoves) / step) * 100)} \n` +
+          `% valid ${Math.round(((step - invalidMoves) / step) * 100)} --` +
           `#invalid ${invalidMoves} -- ` +
           `eps: ${this.eps} -- reward: ${reward}`
       );
@@ -95,7 +95,7 @@ export class Orchestrator {
 
   async replay() {
     // Sample from memory
-    const batch = this.memory.recallRandomly(50); // half
+    const batch = this.memory.recallRandomly(500); // half
     const states = batch.map(([state, , ,]) => state);
     const nextStates = batch.map(([, , , nextState]) =>
       nextState ? nextState : tf.zeros([NUM_STATES])

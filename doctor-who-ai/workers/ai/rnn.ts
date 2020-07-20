@@ -27,7 +27,7 @@ async function ensureNetwork() {
       epsilon: 0.05,
       numActions: 4,
       gameMemorySize: 10,
-      moveMemorySize: 20,
+      moveMemorySize: 1000,
     });
   }
 }
@@ -40,7 +40,7 @@ export async function train100Games(game: Game2048) {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 2;
+  let batches = 10;
   let gamesPerBatch = 20;
   let total = batches * gamesPerBatch;
   // work has to be batched, cause the browser tab
