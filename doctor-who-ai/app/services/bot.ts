@@ -57,6 +57,8 @@ export default class Bot extends Service {
   *gameLoop() {
     yield this.aiWorker.train(this.game.state);
 
+    console.info('Starting Demonstration...');
+
     while (!this.game.isGameOver) {
       // let the external code calculate stuff?
       yield timeout(50);

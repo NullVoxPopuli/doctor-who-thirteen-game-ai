@@ -4,7 +4,7 @@
 import { MOVE_KEY_MAP } from './consts';
 import { voidFn, isEqual } from './utils';
 
-import type { DirectionKey, InternalMove } from 'doctor-who-ai/services/ai/consts';
+import type { DirectionKey } from 'doctor-who-ai/services/ai/consts';
 
 export function executeMove(gameManager: Game2048, move: DirectionKey) {
   let internalMove = MOVE_KEY_MAP[move];

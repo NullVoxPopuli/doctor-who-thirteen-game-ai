@@ -20,6 +20,8 @@ export const MOVE_KEY_MAP = {
 
 export type InternalMove = typeof MOVE_KEY_MAP[DirectionKey];
 
+export const ALL_INTERNAL_MOVES = [0, 1, 2, 3] as InternalMove[];
+
 // Math.log2(key)
 export const VALUE_MAP = {
   0: 0,

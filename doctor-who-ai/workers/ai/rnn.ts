@@ -8,6 +8,7 @@ import { Orchestrator } from './tfjs-mountaincar/orchestrator';
 
 let network!: tf.LayersModel;
 let agent: GameTrainer;
+let highestScore = 0;
 
 export async function run(game: Game2048) {
   Object.freeze(game.grid);
@@ -27,10 +28,13 @@ async function ensureNetwork() {
       epsilon: 0.05,
       numActions: 4,
       gameMemorySize: 10,
-      moveMemorySize: 1000,
+      moveMemorySize: 4000,
     });
   }
 }
+
+let totalScore = 0;
+let totalGames = 0;
 
 export async function train100Games(game: Game2048) {
   console.time('Training');
@@ -40,8 +44,8 @@ export async function train100Games(game: Game2048) {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 10;
-  let gamesPerBatch = 20;
+  let batches = 20;
+  let gamesPerBatch = 50;
   let total = batches * gamesPerBatch;
   // work has to be batched, cause the browser tab
   // keeps crashing
@@ -51,9 +55,19 @@ export async function train100Games(game: Game2048) {
   let trainBatch = async () => {
     for (let i = 0; i < gamesPerBatch; i++) {
       games++;
+      totalGames++;
       let trainingResult = await trainOnce();
 
-      console.debug(`${total - games} left until displayed game. Last: `, trainingResult);
+      totalScore += trainingResult.score;
+      highestScore = Math.max(highestScore, trainingResult.score);
+
+      console.debug(
+        `${total - games} left until displayed game. ` +
+          `Highest Score: ${highestScore}. ` +
+          `AverageScore: ${Math.round((totalScore / totalGames) * 100) / 100}. ` +
+          `Last: `,
+        trainingResult
+      );
     }
   };
 

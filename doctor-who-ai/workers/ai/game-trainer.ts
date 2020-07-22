@@ -59,13 +59,27 @@ export class GameTrainer {
 
   async getMove(game: Game2048): Promise<DirectionKey> {
     let inputs = gameToTensor(game);
-    let moveIndex = this.agent.act(inputs.reshape([16]));
-    let move = ALL_MOVES[moveIndex];
+    let moveInfo = this.agent.act(inputs.reshape([16]));
+    let validMove = firstValidMoveOf(moveInfo.sorted, game);
 
-    return move;
+    return ALL_MOVES[validMove];
   }
 
   async train(originalGame: Game2048) {}
+}
+
+export function firstValidMoveOf(moveList: InternalMove[], game: Game2048) {
+  let gameCopy = clone(game?.serialize?.() || game);
+
+  for (let move of moveList) {
+    let { wasMoved } = imitateMove(gameCopy, ALL_MOVES[move]);
+
+    if (wasMoved) {
+      return move;
+    }
+  }
+
+  throw new Error('No moves are valid, is the game over?');
 }
 
 function decayEpsilon(config: Required<Config>, steps: number) {
@@ -84,7 +98,7 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: Game2048
   let scoreChange = currentGame.score - previousGame.score;
   let moveData = {
     scoreChange,
-    wasMoved: scoreChange !== 0,
+    wasMoved: !isEqual(previousGame.grid.cells, currentGame.grid.cells),
     currentScore: currentGame.score,
     previousScore: previousGame.score,
     over: currentGame.over,
@@ -109,7 +123,7 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: Game2048
   }
 
   if (currentGame.score > previousGame.score) {
-    return { reward: 0.5, ...moveData };
+    return { reward: 0.1, ...moveData };
   }
 
   // next score is equal to current

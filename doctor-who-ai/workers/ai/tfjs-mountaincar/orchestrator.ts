@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 import { Memory } from '../learning/memory';
 import { gameToTensor, clone } from '../utils';
 import { fakeGameFrom } from '../game';
-import { moveAndCalculateReward } from '../game-trainer';
+import { moveAndCalculateReward, firstValidMoveOf } from '../game-trainer';
 import { MOVE_NAMES } from '../consts';
 
 import type { Agent } from '../learning/agent';
@@ -11,12 +11,15 @@ import type { Agent } from '../learning/agent';
 const MIN_EPSILON = 0.01;
 const MAX_EPSILON = 0.9;
 const LAMBDA = 0.000001;
+// const LAMBDA = 0.00001;
 
 const NUM_ACTIONS = 4;
 const NUM_STATES = 16;
 
 let totalMoves = 0;
 let totalInvalidMoves = 0;
+let totalReward = 0;
+let totalTrainedGames = 0;
 
 export class Orchestrator {
   declare memory: Memory<[tf.Tensor2D, number, number, tf.Tensor2D]>;
@@ -48,11 +51,21 @@ export class Orchestrator {
     let gameManager = fakeGameFrom(clonedGame);
     let nextState: tf.Tensor2D;
 
-    while (!gameManager.over && step < 1000) {
+    while (!gameManager.over) {
       // Interaction with the environment
       let inputs = gameToTensor(gameManager);
-      let move = this.model.act(inputs.reshape([16]), this.eps);
+      // while learning, we want to throw invalid moves at the neural network
+      let moveInfo = this.model.act(inputs.reshape([16]), this.eps);
+      let move = moveInfo.sorted[0];
       let { reward, state, over, wasMoved } = moveAndCalculateReward(move, gameManager);
+
+      // account for the network getting stuck choosing an incorrect direction
+      while (!wasMoved) {
+        moveInfo = this.model.act(inputs.reshape([16]), Infinity);
+        move = moveInfo.sorted[0];
+
+        ({ reward, state, over, wasMoved } = moveAndCalculateReward(move, gameManager));
+      }
 
       nextState = state;
 
@@ -64,6 +77,7 @@ export class Orchestrator {
 
       step += 1;
       totalMoves++;
+      totalReward += reward;
       this.steps += 1;
 
       if (!wasMoved) {
@@ -71,30 +85,42 @@ export class Orchestrator {
         totalInvalidMoves++;
       }
 
-      if (step % 1000 === 0) {
+      if (totalMoves % 1000 === 0) {
         console.log('Replaying...');
         await this.replay();
       }
 
-      console.group(
-        `Move: ${totalMoves} = ${MOVE_NAMES[move]} ${wasMoved ? 'succeeded  ' : 'was invalid'}` +
-          `${Math.round(((totalMoves - totalInvalidMoves) / totalMoves) * 100)}% total valid moves.` +
-          '\n' +
-          `Epsilon: ${this.eps} | Reward: ${reward} \n` +
-          `Score: ${gameManager.score} @ ${step} moves. ` +
-          `Move % valid: ${Math.round(((step - invalidMoves) / step) * 100)}`
-      );
-      inputs.print();
-      state.print();
-      console.groupEnd();
+      // console.group(
+      //   `Move: ${totalMoves} = ${MOVE_NAMES[move]} ${wasMoved ? 'succeeded  ' : 'was invalid'} ` +
+      //     `${Math.round(
+      //       ((totalMoves - totalInvalidMoves) / totalMoves) * 100
+      //     )}% total valid moves.` +
+      //     '\n' +
+      //     `Epsilon: ${this.eps} | Reward: ${reward} | Average: ${
+      //       Math.round((totalReward / totalMoves) * 100) / 100
+      //     } \n` +
+      //     `Score: ${gameManager.score} @ ${step} moves. ` +
+      //     `Move % valid: ${Math.round(((step - invalidMoves) / step) * 100)}`
+      // );
+      // inputs.print();
+      // state.print();
+      // console.groupEnd();
     }
+
+    totalTrainedGames++;
 
     // TODO: change epsilon based on the percent of invalid moves
     // Exponentially decay the exploration parameter
     this.eps = MIN_EPSILON + (MAX_EPSILON - MIN_EPSILON) * Math.exp(-LAMBDA * this.steps);
 
+    // reset epsilon every 10k games
+    if (totalTrainedGames % 10000 === 0) {
+      this.eps = MAX_EPSILON;
+    }
+
     return {
       score: gameManager.score,
+      totalMoves,
       moves: step,
       eps: this.eps,
     };
@@ -102,7 +128,7 @@ export class Orchestrator {
 
   async replay() {
     // Sample from memory
-    const batch = this.memory.recallRandomly(500); // half
+    const batch = this.memory.recallRandomly(2000); // half of memory, max 2 games
     const states = batch.map(([state, , ,]) => state);
     const nextStates = batch.map(([, , , nextState]) =>
       nextState ? nextState : tf.zeros([NUM_STATES])
