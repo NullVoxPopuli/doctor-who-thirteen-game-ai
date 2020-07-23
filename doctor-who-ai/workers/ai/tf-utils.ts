@@ -1,6 +1,6 @@
 import tf from '@tensorflow/tfjs';
 
-const fileName = 'very-large-ignoring-invalid-moves.model';
+const fileName = 'ranked-memory-sets-medium.model';
 const dataLocation = `downloads://${fileName}`;
 const fileInfoLocation = `/${fileName}.json`;
 

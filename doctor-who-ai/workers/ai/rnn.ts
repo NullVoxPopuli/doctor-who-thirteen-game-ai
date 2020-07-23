@@ -9,6 +9,7 @@ import { Orchestrator } from './tfjs-mountaincar/orchestrator';
 let network!: tf.LayersModel;
 let agent: GameTrainer;
 let highestScore = 0;
+let totalGames = 0;
 
 export async function run(game: Game2048) {
   Object.freeze(game.grid);
@@ -53,6 +54,7 @@ export async function train100Games(game: Game2048) {
   let trainBatch = async () => {
     for (let i = 0; i < gamesPerBatch; i++) {
       games++;
+      totalGames++;
       let trainingResult = await trainOnce();
 
       totalScore += trainingResult.score;
@@ -63,8 +65,13 @@ export async function train100Games(game: Game2048) {
           `Highest Score: ${highestScore}. ` +
           `AverageScore: ${Math.round((totalScore / games) * 100) / 100}. ` +
           `Last: `,
-        trainingResult
       );
+      console.table([{
+        totalGames,
+        highestScore,
+        averageScore: Math.round((totalScore / games) * 100) / 100,
+        ...trainingResult,
+      }]);
     }
   };
 
