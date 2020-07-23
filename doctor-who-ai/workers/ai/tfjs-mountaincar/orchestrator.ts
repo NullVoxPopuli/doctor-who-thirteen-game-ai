@@ -7,6 +7,7 @@ import { moveAndCalculateReward, firstValidMoveOf } from '../game-trainer';
 import { MOVE_NAMES } from '../consts';
 
 import type { Agent } from '../learning/agent';
+import type { GameMemory, MoveMemory } from '../game-trainer';
 
 const MIN_EPSILON = 0.01;
 const MAX_EPSILON = 0.9;
@@ -22,7 +23,7 @@ let totalReward = 0;
 let totalTrainedGames = 0;
 
 export class Orchestrator {
-  declare memory: Memory<[tf.Tensor2D, number, number, tf.Tensor2D]>;
+  declare memory: Memory<GameMemory>;
   declare model: Agent;
   declare eps: number;
   declare steps: number;
@@ -51,6 +52,8 @@ export class Orchestrator {
     let gameManager = fakeGameFrom(clonedGame);
     let nextState: tf.Tensor2D;
 
+    let moveMemory = new Memory<MoveMemory>(10000);
+
     while (!gameManager.over) {
       // Interaction with the environment
       let inputs = gameToTensor(gameManager);
@@ -73,7 +76,7 @@ export class Orchestrator {
         nextState = undefined;
       }
 
-      this.memory.add([inputs, move, reward, nextState]);
+      moveMemory.add([inputs, move, reward, nextState]);
 
       step += 1;
       totalMoves++;
@@ -84,30 +87,16 @@ export class Orchestrator {
         invalidMoves++;
         totalInvalidMoves++;
       }
-
-      if (totalMoves % 1000 === 0) {
-        console.log('Replaying...');
-        await this.replay();
-      }
-
-      // console.group(
-      //   `Move: ${totalMoves} = ${MOVE_NAMES[move]} ${wasMoved ? 'succeeded  ' : 'was invalid'} ` +
-      //     `${Math.round(
-      //       ((totalMoves - totalInvalidMoves) / totalMoves) * 100
-      //     )}% total valid moves.` +
-      //     '\n' +
-      //     `Epsilon: ${this.eps} | Reward: ${reward} | Average: ${
-      //       Math.round((totalReward / totalMoves) * 100) / 100
-      //     } \n` +
-      //     `Score: ${gameManager.score} @ ${step} moves. ` +
-      //     `Move % valid: ${Math.round(((step - invalidMoves) / step) * 100)}`
-      // );
-      // inputs.print();
-      // state.print();
-      // console.groupEnd();
     }
 
+    this.memory.add({ totalReward, moveMemory });
+
     totalTrainedGames++;
+
+    if (totalTrainedGames % 200 === 0) {
+      console.log('Replaying...');
+      await this.replay();
+    }
 
     // TODO: change epsilon based on the percent of invalid moves
     // Exponentially decay the exploration parameter
@@ -127,41 +116,55 @@ export class Orchestrator {
   }
 
   async replay() {
-    // Sample from memory
-    const batch = this.memory.recallRandomly(2000); // half of memory, max 2 games
-    const states = batch.map(([state, , ,]) => state);
-    const nextStates = batch.map(([, , , nextState]) =>
-      nextState ? nextState : tf.zeros([NUM_STATES])
-    );
-    // Predict the values of each action at each state
-    const qsa = states.map((state) => this.model.predict(state.reshape([16])));
-    // Predict the values of each action at each next state
-    const qsad = nextStates.map((nextState) => this.model.predict(nextState.reshape([16])));
+    let games = this.memory.recallTopBy((item) => item.totalReward, 0.1);
 
-    let x = new Array().fill(0);
-    let y = new Array().fill(0);
+    // smallest first, so we do the biggest rewards later, just in case that matters?
+    games = games.reverse();
 
-    // Update the states rewards with the discounted next states rewards
-    batch.forEach(([state, action, reward, nextState], index) => {
-      const currentQ = qsa[index];
+    for (let game of games) {
+      let rewardMultiplier = (games.indexOf(game) + 1) / games.length;
 
-      currentQ[action] = nextState ? reward + this.discountRate * qsad[index].max() : reward;
-      x.push(state.dataSync());
-      y.push(currentQ.dataSync());
-    });
+      // Sample from memory
+      const batch = game.moveMemory.recallRandomly(1000);
+      const states = batch.map(([state, , ,]) => state);
+      const nextStates = batch.map(([, , , nextState]) =>
+        nextState ? nextState : tf.zeros([NUM_STATES])
+      );
+      // Predict the values of each action at each state
+      const qsa = states.map((state) => this.model.predict(state.reshape([16])));
+      // Predict the values of each action at each next state
+      const qsad = nextStates.map((nextState) => this.model.predict(nextState.reshape([16])));
 
-    // Clean unused tensors
-    qsa.forEach((state) => state.dispose());
-    qsad.forEach((state) => state.dispose());
+      let x = new Array().fill(0);
+      let y = new Array().fill(0);
 
-    // Reshape the batches to be fed to the network
-    let inputs = tf.tensor2d(x, [x.length, NUM_STATES]);
-    let outputs = tf.tensor2d(y, [y.length, NUM_ACTIONS]);
+      // Update the states rewards with the discounted next states rewards
+      batch.forEach(([state, action, reward, nextState], index) => {
+        const currentQ = qsa[index];
 
-    // Learn the Q(s, a) values given associated discounted rewards
-    await this.model.fit(inputs, outputs);
+        if (nextState) {
+          currentQ[action] = reward * rewardMultiplier + this.discountRate * qsad[index].max();
+        } else {
+          currentQ[action] = reward * rewardMultiplier;
+        }
 
-    inputs.dispose();
-    outputs.dispose();
+        x.push(state.dataSync());
+        y.push(currentQ.dataSync());
+      });
+
+      // Clean unused tensors
+      qsa.forEach((state) => state.dispose());
+      qsad.forEach((state) => state.dispose());
+
+      // Reshape the batches to be fed to the network
+      let inputs = tf.tensor2d(x, [x.length, NUM_STATES]);
+      let outputs = tf.tensor2d(y, [y.length, NUM_ACTIONS]);
+
+      // Learn the Q(s, a) values given associated discounted rewards
+      await this.model.fit(inputs, outputs);
+
+      inputs.dispose();
+      outputs.dispose();
+    }
   }
 }

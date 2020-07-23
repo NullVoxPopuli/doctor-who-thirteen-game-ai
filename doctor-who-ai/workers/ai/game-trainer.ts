@@ -17,14 +17,9 @@ const defaultConfig = {
   epsilonDecaySpeed: 0.1,
 };
 
-type MoveMemory = {
-  state: tf.Tensor1D;
-  action: DirectionKey;
-  reward: number;
-  nextState: tf.Tensor1D | null;
-};
+export type MoveMemory = [tf.Tensor2D, number, number, tf.Tensor2D];
 
-type GameMemory = {
+export type GameMemory = {
   totalReward: number;
   moveMemory: Memory<MoveMemory>;
 };

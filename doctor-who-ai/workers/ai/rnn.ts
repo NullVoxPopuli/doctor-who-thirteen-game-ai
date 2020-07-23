@@ -27,14 +27,11 @@ async function ensureNetwork() {
     agent = new GameTrainer(network, {
       epsilon: 0.05,
       numActions: 4,
-      gameMemorySize: 10,
-      moveMemorySize: 4000,
+      gameMemorySize: 100,
+      moveMemorySize: 10000,
     });
   }
 }
-
-let totalScore = 0;
-let totalGames = 0;
 
 export async function train100Games(game: Game2048) {
   console.time('Training');
@@ -43,6 +40,7 @@ export async function train100Games(game: Game2048) {
   await useGPU();
   await ensureNetwork();
 
+  let totalScore = 0;
   let games = 0;
   let batches = 20;
   let gamesPerBatch = 50;
@@ -55,7 +53,6 @@ export async function train100Games(game: Game2048) {
   let trainBatch = async () => {
     for (let i = 0; i < gamesPerBatch; i++) {
       games++;
-      totalGames++;
       let trainingResult = await trainOnce();
 
       totalScore += trainingResult.score;
@@ -64,7 +61,7 @@ export async function train100Games(game: Game2048) {
       console.debug(
         `${total - games} left until displayed game. ` +
           `Highest Score: ${highestScore}. ` +
-          `AverageScore: ${Math.round((totalScore / totalGames) * 100) / 100}. ` +
+          `AverageScore: ${Math.round((totalScore / games) * 100) / 100}. ` +
           `Last: `,
         trainingResult
       );
