@@ -13,6 +13,7 @@
   border-radius: 0.25rem;
   font-size: 0.75rem;
   z-index: 1;
+  height: 100vh;
   /* max-height: 8rem; */
 }
 
@@ -27,7 +28,15 @@
 .ai-score-over-time {
   display: flex;
   flex-direction: column-reverse;
-  max-height: 8rem;
+  /* max-height: 8rem; */
+  /* height: 100%; */
+  align-items: stretch;
+  justify-content:stretch;
+}
+
+.ai-container .ct-square > svg {
+  position: unset;
+
 }
 
 .ct-legend {
@@ -56,10 +65,6 @@
 .ct-series-b .ct-slice-donut {
     stroke: #0C62C1;
     color: #0C62C1;
-}
-
-.container {
-  margin-top: 8rem;
 }
 
 .ai-container dt {

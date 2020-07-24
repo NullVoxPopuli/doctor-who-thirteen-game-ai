@@ -61,7 +61,7 @@ export default class Bot extends Service {
 
     while (!this.game.isGameOver) {
       // let the external code calculate stuff?
-      yield timeout(50);
+      yield timeout(250);
 
       let data = yield this.requestMove();
 

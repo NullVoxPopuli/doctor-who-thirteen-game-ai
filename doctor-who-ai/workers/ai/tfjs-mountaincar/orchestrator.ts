@@ -9,9 +9,9 @@ import { MOVE_NAMES } from '../consts';
 import type { Agent } from '../learning/agent';
 import type { GameMemory, MoveMemory } from '../game-trainer';
 
-const MIN_EPSILON = 0.01;
-const MAX_EPSILON = 0.9;
-const LAMBDA = 0.000001;
+const MIN_EPSILON = 0.00001;
+const MAX_EPSILON = 0.3;
+const LAMBDA = 0.00001;
 // const LAMBDA = 0.00001;
 
 const NUM_ACTIONS = 4;
@@ -93,7 +93,7 @@ export class Orchestrator {
 
     totalTrainedGames++;
 
-    if (totalTrainedGames % 200 === 0) {
+    if (totalTrainedGames % 100 === 0) {
       console.log('Replaying...');
       await this.replay();
     }

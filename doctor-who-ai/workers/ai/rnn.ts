@@ -43,8 +43,8 @@ export async function train100Games(game: Game2048) {
 
   let totalScore = 0;
   let games = 0;
-  let batches = 20;
-  let gamesPerBatch = 50;
+  let batches = 50;
+  let gamesPerBatch = 10;
   let total = batches * gamesPerBatch;
   // work has to be batched, cause the browser tab
   // keeps crashing
@@ -60,18 +60,15 @@ export async function train100Games(game: Game2048) {
       totalScore += trainingResult.score;
       highestScore = Math.max(highestScore, trainingResult.score);
 
-      console.debug(
-        `${total - games} left until displayed game. ` +
-          `Highest Score: ${highestScore}. ` +
-          `AverageScore: ${Math.round((totalScore / games) * 100) / 100}. ` +
-          `Last: `,
-      );
-      console.table([{
-        totalGames,
-        highestScore,
-        averageScore: Math.round((totalScore / games) * 100) / 100,
-        ...trainingResult,
-      }]);
+      console.debug(`${total - games} left until displayed game.`);
+      console.table([
+        {
+          totalGames,
+          highestScore,
+          averageScore: Math.round((totalScore / games) * 100) / 100,
+          ...trainingResult,
+        },
+      ]);
     }
   };
 
