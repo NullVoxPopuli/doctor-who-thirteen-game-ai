@@ -1,5 +1,124 @@
 'use strict';
 
+// ---------------------------------------------------------------
+// ---- web-worker building code
+// ---------------------------------------------------------------
+const Rollup = require('broccoli-rollup');
+
+const commonjs = require('@rollup/plugin-commonjs');
+// import babel, { getBabelOutputPlugin } from '@rollup/plugin-babel';
+const { babel, getBabelOutputPlugin } = require('@rollup/plugin-babel');
+const resolve = require('@rollup/plugin-node-resolve');
+const { terser } = require('rollup-plugin-terser');
+const filesize = require('rollup-plugin-filesize');
+
+const AssetRev = require('broccoli-asset-rev');
+
+const path = require('path');
+const fs = require('fs');
+let cwd = process.cwd();
+let workerRoot = path.join(cwd, 'app', 'workers');
+let extensions = ['.js', '.ts'];
+
+function detectWorkers() {
+  let workers = {};
+  let dir = fs.readdirSync(workerRoot);
+
+  for (let i = 0; i < dir.length; i++) {
+    let name = dir[i];
+
+    workers[name] = path.join(workerRoot, name, 'index.ts');
+  }
+
+  return workers;
+}
+
+function configureWorkerTree({ isProduction, hash }) {
+  return ([name, entryPath]) => {
+    let workerDir = path.join(workerRoot, name);
+
+    let rollupTree = new Rollup(workerDir, {
+      rollup: {
+        input: entryPath,
+        output: [
+          {
+            file: `workers/${name}.js`,
+            format: 'cjs',
+            // plugins: [
+            //   getBabelOutputPlugin({
+            //     presets: [
+            //       require('@babel/preset-env'),
+            //       {
+            //         // targets: '> 2%, not IE 11, not dead',
+            //         // corejs: {
+            //         //   version: 3,
+            //         // },
+            //       },
+            //     ],
+            //   }),
+            // ],
+          },
+        ],
+        plugins: [
+          resolve({
+            extensions,
+            browser: true,
+            preferBuiltins: true,
+          }),
+          commonjs({
+            // include: ['node_modules/**'],
+          }),
+          babel({
+            extensions,
+            babelHelpers: 'bundled',
+            presets: [
+              [
+                require('@babel/preset-env'),
+                {
+                  useBuiltIns: 'usage',
+                  targets: '> 2%, not IE 11, not dead',
+                  corejs: {
+                    version: 3,
+                  },
+                },
+              ],
+              require('@babel/preset-typescript'),
+            ],
+            plugins: [
+              [require('@babel/plugin-transform-typescript'), { allowDeclareFields: true }],
+              require('@babel/plugin-proposal-class-properties'),
+              require('@babel/plugin-proposal-object-rest-spread'),
+            ],
+            exclude: /node_modules/,
+          }),
+          ...(isProduction ? [terser()] : []),
+          filesize(),
+        ],
+      },
+    });
+
+    if (!isProduction) {
+      return rollupTree;
+    }
+
+    return new AssetRev(rollupTree, {
+      customHash: hash,
+    });
+  };
+}
+
+function buildWorkerTrees(env) {
+  let inputs = detectWorkers();
+  let workerBuilder = configureWorkerTree(env);
+  let workerTrees = Object.entries(inputs).map(workerBuilder);
+
+  return workerTrees;
+}
+
+// ---------------------------------------------------------------
+// ---- normal ember-cli-babel.js
+// ---------------------------------------------------------------
+
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 const gitRev = require('git-rev-sync');
 const mergeTrees = require('broccoli-merge-trees');
@@ -36,19 +155,13 @@ module.exports = function (defaults) {
       // need stable URL for bookmarklet to load
       enabled: false,
     },
-    autoImport: {
-      alias: {
-        // the "main" entry is incorrect for this package
-        reimprovejs: 'reimprovejs/dist/reimprove.js',
-      },
-    },
   });
 
-  // app.trees.public = new UnwatchedDir('public');
+  app.trees.public = new UnwatchedDir('public');
   // app.trees.vendor = new UnwatchedDir('public');
   // app.trees.dist = new UnwatchedDir('public');
 
   app.import('node_modules/chartist-plugin-legend/chartist-plugin-legend.js');
 
-  return mergeTrees([app.toTree()]);
+  return mergeTrees([app.toTree(), ...buildWorkerTrees(env)]);
 };

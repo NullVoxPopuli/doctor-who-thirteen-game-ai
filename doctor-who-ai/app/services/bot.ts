@@ -7,26 +7,28 @@ import { restartableTask } from 'ember-concurrency-decorators';
 import { taskFor } from 'ember-concurrency-ts';
 
 import type AIWorker from './ai-worker';
+import type { Algorithm } from './ai-worker';
 import type Game from './game';
 import type GameHistory from './history';
 
 export const BOT = {
   RNN: 'rnn',
   RANDOM: 'random',
-};
+} as const;
 
 export const OPTIONS = {
   [BOT.RNN]: 'Reinforcement Learning Neural Network',
   [BOT.RANDOM]: 'Random',
-};
+} as const;
 
 export default class Bot extends Service {
   @service aiWorker!: AIWorker;
+  // @service worker;
   @service game!: Game;
   @service history!: GameHistory;
 
   @tracked isAutoRetrying = false;
-  @tracked currentBot = BOT.RNN;
+  @tracked currentBot: Algorithm = BOT.RNN;
 
   @action
   play() {
@@ -44,7 +46,7 @@ export default class Bot extends Service {
 
     if (state !== null && !state.over) {
       if (!this.game.startTime) {
-        this.game.startTime = new Date();
+        this.game.startTime = new Date().getDate();
       }
 
       let moveData = await this.aiWorker.requestMove(state, this.currentBot);
@@ -57,32 +59,32 @@ export default class Bot extends Service {
   *gameLoop() {
     yield this.aiWorker.train(this.game.state);
 
-    console.info('Starting Demonstration...');
+    // console.info('Starting Demonstration...');
 
-    while (!this.game.isGameOver) {
-      // let the external code calculate stuff?
-      yield timeout(250);
+    // while (!this.game.isGameOver) {
+    //   // let the external code calculate stuff?
+    //   yield timeout(250);
 
-      let data = yield this.requestMove();
+    //   let data = yield this.requestMove();
 
-      if (!data) {
-        continue;
-      }
+    //   if (!data) {
+    //     continue;
+    //   }
 
-      if (!data.move) {
-        console.error(`No move was generated`, data);
+    //   if (!data.move) {
+    //     console.error(`No move was generated`, data);
 
-        return;
-      }
+    //     return;
+    //   }
 
-      if (data.trainingData) {
-        this.aiWorker.trainingData = data.trainingData;
-      }
+    //   if (data.trainingData) {
+    //     this.aiWorker.trainingData = data.trainingData;
+    //   }
 
-      this.game.pressKey(data.move);
-    }
+    //   this.game.pressKey(data.move);
+    // }
 
-    this.autoRetry();
+    // this.autoRetry();
   }
 
   @action

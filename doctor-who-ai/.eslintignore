@@ -1,3 +1,6 @@
+# very unconventional js
+vendor/
+
 # unconventional js
 /blueprints/*/files/
 /vendor/

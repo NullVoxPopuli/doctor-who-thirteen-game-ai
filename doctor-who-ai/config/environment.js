@@ -1,7 +1,12 @@
 'use strict';
 
 module.exports = function (environment) {
+  let isDevelopment = environment === 'development';
+  let isProduction = environment === 'production';
+
   let ENV = {
+    isDevelopment,
+    isProduction,
     modulePrefix: 'doctor-who-ai',
     environment,
     rootURL: '/',

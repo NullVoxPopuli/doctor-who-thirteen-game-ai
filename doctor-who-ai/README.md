@@ -25,9 +25,24 @@ You will need the following things properly installed on your computer.
 * Visit your app at [http://localhost:4200](http://localhost:4200).
 * Visit your tests at [http://localhost:4200/tests](http://localhost:4200/tests).
 
-### Code Generators
+### WebWorkers
 
-Make use of the many generators for code, try `ember help generate` for more details
+ - would like to use html-next/skyrocket
+ - waiting on a few issues to be resolved https://github.com/html-next/skyrocket/issues
+   - including typescript support
+ - packages added to support custom web-worker pipeline
+   - promise-worker-bi
+   - @babel/preset-env
+   - @babel/preset-typescript
+   - @babel/plugin-proposal-class-properties
+   - @babel/plugin-proposal-object-rest-spread
+   - rollup
+   - rollup-plugin-filesize
+   - rollup-plugin-terser
+   - @rollup/plugin-node-resolve
+   - @rollup/plugin-babel
+   - rollup-plugin-commonjs
+   - broccoli-rollup
 
 ### Running Tests
 
@@ -58,3 +73,4 @@ Specify what it takes to deploy your app.
   * [ember inspector for firefox](https://addons.mozilla.org/en-US/firefox/addon/ember-inspector/)
 * General Deep Learning
   * [Reinforcement Deep Q Learning for Playing a Game in Unity](https://medium.com/ml2vec/reinforcement-deep-q-learning-for-playing-a-game-in-unity-d2577fb50a81)
+
