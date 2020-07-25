@@ -11,6 +11,8 @@ import { imitateMove, executeMove, fakeGameFrom } from '../game';
 import { Model } from './model';
 import { guidedMove } from '../a-star';
 
+import type { GameManager } from 'ai/rnn/vendor/app.map-worker-edition';
+
 const defaultConfig = {
   minEpsilon: 0.001,
   maxEpsilon: 0.1,
@@ -59,13 +61,13 @@ export class GameTrainer {
     for (let i = 0; i < numberOfGames; i++) {
       let gameManager = fakeGameFrom(clone(originalGame));
 
-      let result = await this.qlearn.playOnce<GameState, tf.Tensor1D, InternalMove, RewardInfo>({
+      let result = await this.qlearn.playOnce<GameManager, tf.Tensor1D, InternalMove, RewardInfo>({
         game: gameManager,
         getState: (game) => gameToTensor(game).reshape([16]),
         isGameOver: (game) => game.over,
         isValidAction: (rewardInformation) => rewardInformation.wasMoved,
         getReward: (game, action) => moveAndCalculateReward(action, game),
-        getRankedActions: (game, state: tf.Tensor, useExternalAction) => {
+        getRankedActions: (game, state, useExternalAction) => {
           let moveInfo;
 
           if (useExternalAction) {
@@ -86,13 +88,15 @@ export class GameTrainer {
     trainingStats.averageScore = trainingStats.totalScore / numberOfGames;
     trainingStats.averageMoves = trainingStats.totalMoves / numberOfGames;
 
+    console.debug(`"Learning"`);
+
     await this.qlearn.learn({
       reshapeState: (state) => state.reshape([16]),
       predict: (input) => this.model.predict(input),
       fit: (inputs, outputs) => this.model.fit(inputs, outputs),
     });
 
-    return trainingStats;
+    return { ...trainingStats, epsilon: this.qlearn.config.epsilon };
   }
 }
 
