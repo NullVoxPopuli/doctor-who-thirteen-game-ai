@@ -33,12 +33,6 @@ export class GameTrainer {
   declare model: Model;
   declare qlearn: QLearn;
 
-  trainingStats = {
-    totalGames: 0,
-    totalMoves: 0,
-    averageMovesPerGame: 0,
-  };
-
   constructor(network: tf.LayersModel, config: Config) {
     this.config = { ...defaultConfig, ...config };
     this.model = new Model(network);
@@ -54,6 +48,14 @@ export class GameTrainer {
   }
 
   async train(originalGame: GameState, numberOfGames = 1) {
+    let trainingStats = {
+      totalMoves: 0,
+      totalScore: 0,
+      averageScore: 0,
+      averageMoves: 0,
+      bestScore: 0,
+    };
+
     for (let i = 0; i < numberOfGames; i++) {
       let gameManager = fakeGameFrom(clone(originalGame));
 
@@ -76,18 +78,21 @@ export class GameTrainer {
         },
       });
 
-      console.debug({
-        ...result,
-        score: gameManager.score,
-        epsilon: this.qlearn.config.epsilon,
-      });
+      trainingStats.totalScore += gameManager.score;
+      trainingStats.bestScore = Math.max(trainingStats.bestScore, gameManager.score);
+      trainingStats.totalMoves += result.numSteps;
     }
+
+    trainingStats.averageScore = trainingStats.totalScore / numberOfGames;
+    trainingStats.averageMoves = trainingStats.totalMoves / numberOfGames;
 
     await this.qlearn.learn({
       reshapeState: (state) => state.reshape([16]),
       predict: (input) => this.model.predict(input),
       fit: (inputs, outputs) => this.model.fit(inputs, outputs),
     });
+
+    return trainingStats;
   }
 }
 

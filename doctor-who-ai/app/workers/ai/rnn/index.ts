@@ -39,17 +39,19 @@ export async function trainBatch(game: GameState) {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 1;
+  let batches = 20;
   let gamesPerBatch = 10;
   let total = batches * gamesPerBatch;
 
   for (let i = 0; i < batches; i++) {
-    await agent.train(game, gamesPerBatch);
+    console.debug(`Starting Batch ${i}`);
+    let stats = await agent.train(game, gamesPerBatch);
 
     games += gamesPerBatch;
     totalGames += gamesPerBatch;
 
     console.debug(`${total - games} left until displayed game. Total: ${totalGames}`);
+    console.table([stats]);
   }
 
   await save(network);
