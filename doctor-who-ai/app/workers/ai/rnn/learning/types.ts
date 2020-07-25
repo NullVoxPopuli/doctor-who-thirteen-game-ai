@@ -1,6 +1,7 @@
 import tf from '@tensorflow/tfjs';
 import { DirectionKey } from 'doctor-who-ai/services/ai/consts';
 
+
 export interface Config {
   /**
    * number of actions
@@ -43,4 +44,3 @@ export interface Config {
    */
   moveMemorySize: number;
 }
-

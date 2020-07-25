@@ -1,4 +1,4 @@
-import { ALL_MOVES } from './rnn/consts';
+import { ALL_MOVES } from './consts';
 
 export function run() {
   // only need to multiply by 3, because 0 counts as our fourth

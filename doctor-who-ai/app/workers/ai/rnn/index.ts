@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-import { useGPU, getNetwork, save } from './tf-utils';
+import { useGPU, getNetwork, save } from './model/tf-utils';
 import { GameTrainer } from './game-trainer';
 
 let network!: tf.LayersModel;
@@ -41,7 +41,7 @@ export async function trainBatch(game: Game2048) {
   let totalScore = 0;
   let games = 0;
   let batches = 1;
-  let gamesPerBatch = 50;
+  let gamesPerBatch = 10;
   let total = batches * gamesPerBatch;
   // work has to be batched, cause the browser tab
   // keeps crashing

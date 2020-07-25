@@ -1,4 +1,4 @@
-import * as random from 'random';
+import random from 'random';
 
 export class Memory<T> {
   declare size: number;

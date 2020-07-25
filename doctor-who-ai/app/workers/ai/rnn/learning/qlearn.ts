@@ -2,7 +2,7 @@ import * as tf from '@tensorflow/tfjs';
 
 import { Memory } from './learning/memory';
 import { gameToTensor, clone } from './utils';
-import { fakeGameFrom } from './game';
+import { fakeGameFrom } from '../game';
 import { moveAndCalculateReward, firstValidMoveOf } from './game-trainer';
 
 import type { Agent } from './learning/agent';

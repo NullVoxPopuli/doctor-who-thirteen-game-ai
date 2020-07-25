@@ -27,6 +27,9 @@
       "doctor-who-ai/*": [
         "app/*"
       ],
+      "ai/*": [
+        "app/workers/ai/*"
+      ],
       "*": [
         "types/*"
       ]

@@ -1,8 +1,8 @@
 import * as tf from '@tensorflow/tfjs';
 
 const fileName = 'guided-medium.model';
-const dataLocation = `downloads://${fileName}`;
-const fileInfoLocation = `http://localhost:4200/${fileName}.json`;
+const dataLocation = `indexeddb://${fileName}`;
+// const fileInfoLocation = `http://localhost:4200/${fileName}.json`;
 
 export async function useGPU() {
   if (tf.getBackend() !== 'webgl') {
@@ -10,6 +10,8 @@ export async function useGPU() {
   }
 
   await tf.ready();
+
+  console.debug(`TensorFlow Backend: `, tf.getBackend());
 }
 
 export async function save(network: tf.LayersModel) {
@@ -20,7 +22,7 @@ export async function getNetwork(): Promise<tf.LayersModel> {
   let model;
 
   try {
-    model = await tf.loadLayersModel(fileInfoLocation);
+    model = await tf.loadLayersModel(dataLocation);
   } catch (e) {
     console.debug(e);
   }

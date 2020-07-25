@@ -1,13 +1,9 @@
 import * as tf from '@tensorflow/tfjs';
-import * as random from 'random';
-
-import { imitateMove, fakeGameFrom } from '../game';
-import { clone } from '../utils';
 
 import type { Config } from './types';
-import type { InternalMove } from '../consts';
 
-import { ALL_INTERNAL_MOVES, ALL_MOVES, MOVE_KEY_MAP } from '../consts';
+import { ALL_INTERNAL_MOVES } from '../../consts';
+import { guidedMove } from '../../a-star';
 
 export class Agent {
   declare config: Config;
@@ -22,7 +18,7 @@ export class Agent {
     return this.model.fit(gameState, rankedMoves);
   }
 
-  act(inputs: tf.Tensor, epsilon: number = -Infinity, gameManger: Game2048) {
+  act(inputs: tf.Tensor, epsilon = -Infinity, gameManger: Game2048) {
     let { numActions } = this.config;
 
     if (Math.random() < epsilon) {
@@ -33,15 +29,16 @@ export class Agent {
     // if numActions = 4, then there will be 4 elements in the returned array
     // expandDims converts regular inputs into batch inputs
     let inputData = inputs.expandDims();
-    let moveWeights: number[];
+    let result;
 
     tf.tidy(() => {
       let output = this.model.predict(inputData);
 
-      moveWeights = output.dataSync();
+      let moveWeights = output.dataSync();
+      result = moveInfoFor(moveWeights);
     });
 
-    return moveInfoFor(moveWeights);
+    return result;
   }
 
   predict(inputs: tf.Tensor1D) {
@@ -50,120 +47,6 @@ export class Agent {
 
     return output;
   }
-}
-
-type SearchNode = {
-  value: {
-    model: Game2048;
-  };
-  children: SearchNode[];
-  move?: number;
-  parent?: SearchNode;
-  weightedScore?: number;
-};
-
-function guidedMove(numActions: number, gameManager: Game2048) {
-  let result: InternalMove[] = [];
-
-  let bestNode: any;
-  let bestScore = 0;
-  let bestHops = 1000;
-
-  let rootNode: SearchNode = {
-    value: { model: gameManager },
-    children: [],
-  };
-
-  function updateBest(childNode: SearchNode) {
-    if (childNode === rootNode) {
-      return;
-    }
-
-    if (childNode.weightedScore < bestScore) {
-      return;
-    }
-
-    // if the score is equal, let's choose the least hops
-    let root = childNode;
-    let hops = 0;
-
-    while (root.parent !== undefined && root.parent.move !== undefined) {
-      root = root.parent;
-      hops++;
-    }
-
-    // if (hops < bestHops) {
-    //   if (hops === 0) {
-        if (childNode.weightedScore > bestScore) {
-          bestNode = root;
-          bestScore = childNode.weightedScore;
-        }
-
-        // return;
-      // }
-
-      // bestHops = hops;
-      // bestNode = root;
-      // bestScore = childNode.weightedScore;
-    // }
-  }
-
-  function expandTree(node: SearchNode, level: number) {
-    updateBest(node);
-
-    if (level >= 3) {
-      return;
-    }
-
-    const enumerateMoves = () => {
-      for (let move of ALL_MOVES) {
-        let copyOfModel = clone(node.value);
-        let moveData = imitateMove(copyOfModel.model, move);
-
-        if (!moveData.wasMoved) {
-          continue;
-        }
-
-        let scoreChange = moveData.score - gameManager.score;
-        let weightedScore = level === 0 ? scoreChange : scoreChange / level;
-
-        node.children.push({
-          // penalize scores with higher depth
-          weightedScore,
-
-          value: moveData,
-          children: [],
-          move: MOVE_KEY_MAP[move],
-          parent: node,
-        });
-      }
-    };
-
-    enumerateMoves();
-
-    for (let childNode of node.children) {
-      expandTree(childNode, level + 1);
-    }
-  }
-
-  expandTree(rootNode, 0);
-
-  if (bestNode && bestNode.move) {
-    result.push(bestNode.move);
-  }
-
-  // [0, numActions]
-  let generateMove = () => random.int(0, numActions - 1);
-
-  while (result.length < 4) {
-    let move = generateMove();
-
-    if (!result.includes(move)) {
-      result.push(move);
-    }
-  }
-
-  return { sorted: result };
 }
 
 function moveInfoFor(weights: number[]) {
@@ -181,20 +64,4 @@ function sortedMoves(weights: number[]) {
   });
 
   return moves;
-}
-
-function highestIndex(arr: number[]) {
-  let highestIndex = 0;
-  let highest = 0;
-
-  for (let i = 0; i < arr.length; i++) {
-    let value = arr[i];
-
-    if (highest < value) {
-      highest = value;
-      highestIndex = i;
-    }
-  }
-
-  return highestIndex;
 }

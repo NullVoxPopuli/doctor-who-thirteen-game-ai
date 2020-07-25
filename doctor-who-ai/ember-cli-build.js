@@ -11,6 +11,7 @@ const { babel, getBabelOutputPlugin } = require('@rollup/plugin-babel');
 const resolve = require('@rollup/plugin-node-resolve');
 const { terser } = require('rollup-plugin-terser');
 const filesize = require('rollup-plugin-filesize');
+const alias = require('@rollup/plugin-alias');
 
 const AssetRev = require('broccoli-asset-rev');
 
@@ -40,6 +41,7 @@ function configureWorkerTree({ isProduction, hash }) {
     let rollupTree = new Rollup(workerDir, {
       rollup: {
         input: entryPath,
+        watch: true,
         output: [
           {
             file: `workers/${name}.js`,
@@ -60,6 +62,13 @@ function configureWorkerTree({ isProduction, hash }) {
           },
         ],
         plugins: [
+          alias({
+            entries: [
+              { find: 'consts', replacement: path.resolve(workerDir, 'consts') },
+              { find: name, replacement: path.resolve(workerDir) },
+
+            ],
+          }),
           resolve({
             extensions,
             browser: true,
@@ -85,7 +94,10 @@ function configureWorkerTree({ isProduction, hash }) {
               require('@babel/preset-typescript'),
             ],
             plugins: [
-              [require('@babel/plugin-transform-typescript'), { allowDeclareFields: true }],
+              [
+                require('@babel/plugin-transform-typescript'),
+                { allowDeclareFields: true, allowNamespaces: true },
+              ],
               require('@babel/plugin-proposal-class-properties'),
               require('@babel/plugin-proposal-object-rest-spread'),
             ],

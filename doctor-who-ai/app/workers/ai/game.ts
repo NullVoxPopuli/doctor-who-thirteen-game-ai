@@ -1,11 +1,13 @@
+import { GameManager } from './rnn/vendor/app.map-worker-edition';
+
 import { MOVE_KEY_MAP } from './consts';
-import { voidFn, isEqual } from './utils';
+import { voidFn, isEqual } from './rnn/utils';
 
 import type { DirectionKey } from './consts';
 
 // import iife from '../../../../public/dist/js/maps/app';
 // iife();
-import './vendor/app.map-worker-edition';
+import './rnn/vendor/app.map-worker-edition';
 
 export function executeMove(gameManager: Game2048, move: DirectionKey) {
   let internalMove = MOVE_KEY_MAP[move];

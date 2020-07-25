@@ -4,12 +4,15 @@ import { Agent } from './learning/agent';
 import { Memory } from './learning/memory';
 
 import type { Config } from './learning/types';
-import type { DirectionKey, InternalMove } from './consts';
+import type { DirectionKey, InternalMove } from '../consts';
 
-import { ALL_MOVES, MOVE_KEY_MAP } from './consts';
+import { ALL_MOVES, MOVE_KEY_MAP } from '../consts';
 import { clone, groupByValue, gameToTensor, isEqual } from './utils';
-import { imitateMove, executeMove } from './game';
-import { Orchestrator } from './orchestrator';
+import { imitateMove, executeMove, fakeGameFrom } from '../game';
+import { Orchestrator } from './qlearn';
+import { Model } from './model';
+import { guidedMove } from '../a-star';
+import Game from 'doctor-who-ai/services/game';
 
 const defaultConfig = {
   minEpsilon: 0.001,
@@ -27,10 +30,8 @@ export type GameMemory = {
 export class GameTrainer {
   declare memory: Memory<GameMemory>;
   declare config: Required<Config>;
-  declare agent: Agent;
-  declare model: tf.LayersModel;
-  declare epsilon: number;
-  declare orchestrator: Orchestrator;
+  declare model: Model;
+  declare qlearn: QLearn;
 
   trainingStats = {
     totalGames: 0,
@@ -40,27 +41,56 @@ export class GameTrainer {
 
   constructor(network: tf.LayersModel, config: Config) {
     this.config = { ...defaultConfig, ...config };
-    this.model = network;
-    this.agent = new Agent(network, config);
-    this.memory = new Memory(config.gameMemorySize);
-    this.epsilon = config.epsilon;
-    this.orchestrator = new Orchestrator(
-      this.agent,
-      this.memory,
-      this.config.epsilonDecaySpeed,
-      400
-    );
+    this.model = new Model(network);
+    this.qlearn = new QLearn(network, config);
+
   }
 
   async getMove(game: Game2048): Promise<DirectionKey> {
     let inputs = gameToTensor(game);
-    let moveInfo = this.agent.act(inputs.reshape([16]));
+    let moveInfo = this.model.act(inputs.reshape([16]));
     let validMove = firstValidMoveOf(moveInfo.sorted, game);
 
     return ALL_MOVES[validMove];
   }
 
-  async train(originalGame: Game2048) {}
+  async train(originalGame: Game2048, numberOfGames = 1) {
+    let gameManager = fakeGameFrom(clone(originalGame));
+
+    // NOTE: mutates gameManager
+    let result = await this.qlearn.playOnce({
+      game: gameManager,
+      numberOfActions: 4,
+      getState: (game: Game2048) => {
+        let inputs = gameToTensor(game);
+
+        return inputs.reshape([16]);
+      },
+      isGameOver: (game: Game2048) => {
+        return game.over;
+      },
+      getActionRanks: (game: Game2048, state: tf.Tensor, epsilon: number) => {
+        let moveInfo;
+
+        if (Math.random() < epsilon) {
+          moveInfo = guidedMove(4, game);
+        } else {
+          moveInfo = this.model.act(state);
+        }
+
+        // if the first action is invalid, the next rankedAction will be used
+        return moveInfo.sorted;
+      },
+      getReward: (game: Game2048, action: InternalMove) => {
+        return moveAndCalculateReward(action, game);
+      },
+      isValidAction: (rewardInformation) => rewardInformation.wasMoved,
+    });
+
+    console.log(result);
+
+    await this.qlearn.learn();
+  }
 }
 
 export function firstValidMoveOf(moveList: InternalMove[], game: Game2048) {
