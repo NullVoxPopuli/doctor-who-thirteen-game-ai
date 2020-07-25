@@ -1,46 +1,76 @@
 import * as tf from '@tensorflow/tfjs';
 
-import { Memory } from './learning/memory';
-import { gameToTensor, clone } from './utils';
-import { fakeGameFrom } from '../game';
-import { moveAndCalculateReward, firstValidMoveOf } from './game-trainer';
+import { Memory } from './memory';
+import { gameToTensor, clone } from '../utils';
+import { fakeGameFrom } from '../../game';
+import { moveAndCalculateReward, firstValidMoveOf, MoveMemory } from '../game-trainer';
 
-import type { Agent } from './learning/agent';
-import type { GameMemory, MoveMemory } from './game-trainer';
+import type { Config } from './types';
 
-const MIN_EPSILON = 0.00001;
-const MAX_EPSILON = 0.9;
-const LAMBDA = 0.0000001;
-// const LAMBDA = 0.00001;
+interface RequiredRewardInfo {
+  nextState: tf.Tensor;
+}
 
-const NUM_ACTIONS = 4;
-const NUM_STATES = 16;
+type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo> = {
+  game: Game;
+  numberOfActions: number;
+  getState: (game: Game) => State;
+  isGameOver: (game: Game) => boolean;
+  getRankedActions: (game: Game, state: State, useExternalAction: boolean) => Action[];
+  getReward: (game: Game, action: Action) => RewardInfo;
+  isValidAction: (rewardInfo: RewardInfo) => boolean;
+};
 
-let totalMoves = 0;
-let totalInvalidMoves = 0;
-let totalReward = 0;
-let totalTrainedGames = 0;
+export class QLearn<ActionMemory, GameMemory> {
+  declare gameMemory: Memory<GameMemory>;
+  declare config: Config;
+  declare epsilon: number;
 
-export class Orchestrator {
-  declare memory: Memory<GameMemory>;
-  declare model: Agent;
-  declare eps: number;
-  declare steps: number;
-  declare maxStepsPerGame: number;
-  declare discountRate: number;
+  constructor(config: Config) {
+    this.config = config;
+    this.gameMemory = new Memory<GameMemory>(config.gameMemorySize);
 
-  constructor(model: Agent, memory: Memory<any>, discountRate: number, maxStepsPerGame: number) {
-    this.model = model;
-    this.memory = memory;
+    this.epsilon = config.epsilon;
+  }
 
-    // The exploration parameter
-    this.eps = MAX_EPSILON;
+  async playOnce<Game, State, Action, RewardInfo extends RequiredRewardInfo> (lessonConfig: LessonConfig<Game, State, Action, RewardInfo>) {
+    let moveMemory = new Memory<MoveMemory>(this.config.moveMemorySize);
 
-    // Keep tracking of the elapsed steps
-    this.steps = 0;
-    this.maxStepsPerGame = maxStepsPerGame;
+    let { game, numberOfActions } = lessonConfig;
 
-    this.discountRate = discountRate;
+    while(!lessonConfig.isGameOver(game)) {
+      let inputs = lessonConfig.getState(game);
+
+      let useExternalAction = Math.random() < this.epsilon;
+      let rankedActions = lessonConfig.getRankedActions(game, inputs, useExternalAction);
+
+      let action = rankedActions[0];
+
+      let rewardInfo = lessonConfig.getReward(game, action);
+
+      if (!lessonConfig.isValidAction(rewardInfo)) {
+        // skip the first, we already tried it
+        for (let i = 1; i < rankedActions.length; i++) {
+          action = rankedActions[i];
+
+          rewardInfo = lessonConfig.getReward(game, action);
+
+          if (lessonConfig.isValidAction(rewardInfo)) {
+            break;
+          }
+        }
+      }
+
+      let nextState = rewardInfo.nextState;
+
+      if (lessonConfig.isGameOver(game)) {
+        nextState = undefined;
+      }
+
+      moveMemory.add([inputs, actions, rewardInfo.reward, nextState]);
+    }
+
+    this.gameMemory.add({ })
   }
 
   async run(originalGame: Game2048, gameNumber: number) {

@@ -72,5 +72,7 @@ Specify what it takes to deploy your app.
   * [ember inspector for chrome](https://chrome.google.com/webstore/detail/ember-inspector/bmdblncegkenkacieihfhpjfppoconhi)
   * [ember inspector for firefox](https://addons.mozilla.org/en-US/firefox/addon/ember-inspector/)
 * General Deep Learning
+  * [Reinforcement Learning in the Browser](https://medium.com/@pierrerouhard/reinforcement-learning-in-the-browser-an-introduction-to-tensorflow-js-9a02b143c099)
   * [Reinforcement Deep Q Learning for Playing a Game in Unity](https://medium.com/ml2vec/reinforcement-deep-q-learning-for-playing-a-game-in-unity-d2577fb50a81)
-
+  * [Crash Course in Deep Q Networks](https://towardsdatascience.com/qrash-course-deep-q-networks-from-the-ground-up-1bbda41d3677)
+  * [Open A.I. Baslines DQN](https://openai.com/blog/openai-baselines-dqn/)

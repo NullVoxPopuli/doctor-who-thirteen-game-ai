@@ -2,6 +2,7 @@ import tf from '@tensorflow/tfjs';
 
 import { Agent } from './learning/agent';
 import { Memory } from './learning/memory';
+import { QLearn } from './learning/qlearn';
 
 import type { Config } from './learning/types';
 import type { DirectionKey, InternalMove } from '../consts';
@@ -28,10 +29,9 @@ export type GameMemory = {
 };
 
 export class GameTrainer {
-  declare memory: Memory<GameMemory>;
   declare config: Required<Config>;
   declare model: Model;
-  declare qlearn: QLearn;
+  declare qlearn: QLearn<MoveMemory, GameMemory>;
 
   trainingStats = {
     totalGames: 0,
@@ -42,7 +42,7 @@ export class GameTrainer {
   constructor(network: tf.LayersModel, config: Config) {
     this.config = { ...defaultConfig, ...config };
     this.model = new Model(network);
-    this.qlearn = new QLearn(network, config);
+    this.qlearn = new QLearn(config);
 
   }
 
@@ -59,7 +59,7 @@ export class GameTrainer {
 
     // NOTE: mutates gameManager
     let result = await this.qlearn.playOnce({
-      game: gameManager,
+      game: (gameManager as unknown) as Game2048,
       numberOfActions: 4,
       getState: (game: Game2048) => {
         let inputs = gameToTensor(game);
@@ -69,10 +69,10 @@ export class GameTrainer {
       isGameOver: (game: Game2048) => {
         return game.over;
       },
-      getActionRanks: (game: Game2048, state: tf.Tensor, epsilon: number) => {
+      getRankedActions: (game, state: tf.Tensor, useExternalAction) => {
         let moveInfo;
 
-        if (Math.random() < epsilon) {
+        if (useExternalAction) {
           moveInfo = guidedMove(4, game);
         } else {
           moveInfo = this.model.act(state);
@@ -81,7 +81,7 @@ export class GameTrainer {
         // if the first action is invalid, the next rankedAction will be used
         return moveInfo.sorted;
       },
-      getReward: (game: Game2048, action: InternalMove) => {
+      getReward: (game, action) => {
         return moveAndCalculateReward(action, game);
       },
       isValidAction: (rewardInformation) => rewardInformation.wasMoved,
