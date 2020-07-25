@@ -1,4 +1,4 @@
-import { GameManager } from './rnn/vendor/app.map-worker-edition';
+import { GameManager } from 'ai/rnn/vendor/app.map-worker-edition';
 
 import { MOVE_KEY_MAP } from './consts';
 import { voidFn, isEqual } from './rnn/utils';
@@ -32,7 +32,7 @@ export function imitateMove(model: Game2048, move: DirectionKey) {
   };
 }
 
-export function fakeGameFrom(model: Game2048) {
+export function fakeGameFrom(model: GameState) {
   class FakeInputManager {
     declare on: () => void;
 
@@ -50,7 +50,7 @@ export function fakeGameFrom(model: Game2048) {
   }
 
   class FakeStorage {
-    declare getGameState: () => Game2048;
+    declare getGameState: () => GameState;
     declare clearGameState: () => void;
     declare getBestScore: () => void;
     declare setGameState: () => void;

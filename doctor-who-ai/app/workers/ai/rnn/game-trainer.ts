@@ -1,19 +1,15 @@
 import tf from '@tensorflow/tfjs';
 
-import { Agent } from './learning/agent';
-import { Memory } from './learning/memory';
 import { QLearn } from './learning/qlearn';
 
 import type { Config } from './learning/types';
 import type { DirectionKey, InternalMove } from '../consts';
 
-import { ALL_MOVES, MOVE_KEY_MAP } from '../consts';
+import { ALL_MOVES } from '../consts';
 import { clone, groupByValue, gameToTensor, isEqual } from './utils';
 import { imitateMove, executeMove, fakeGameFrom } from '../game';
-import { Orchestrator } from './qlearn';
 import { Model } from './model';
 import { guidedMove } from '../a-star';
-import Game from 'doctor-who-ai/services/game';
 
 const defaultConfig = {
   minEpsilon: 0.001,
@@ -21,17 +17,21 @@ const defaultConfig = {
   epsilonDecaySpeed: 0.1,
 };
 
-export type MoveMemory = [tf.Tensor2D, number, number, tf.Tensor2D];
-
-export type GameMemory = {
-  totalReward: number;
-  moveMemory: Memory<MoveMemory>;
+type RewardInfo = {
+  reward: number;
+  scoreChange: number;
+  wasMoved: boolean;
+  currentScore: number;
+  previousScore: number;
+  over: boolean;
+  won: boolean;
+  nextState: tf.Tensor2D;
 };
 
 export class GameTrainer {
   declare config: Required<Config>;
   declare model: Model;
-  declare qlearn: QLearn<MoveMemory, GameMemory>;
+  declare qlearn: QLearn;
 
   trainingStats = {
     totalGames: 0,
@@ -43,10 +43,9 @@ export class GameTrainer {
     this.config = { ...defaultConfig, ...config };
     this.model = new Model(network);
     this.qlearn = new QLearn(config);
-
   }
 
-  async getMove(game: Game2048): Promise<DirectionKey> {
+  async getMove(game: GameState): Promise<DirectionKey> {
     let inputs = gameToTensor(game);
     let moveInfo = this.model.act(inputs.reshape([16]));
     let validMove = firstValidMoveOf(moveInfo.sorted, game);
@@ -54,46 +53,45 @@ export class GameTrainer {
     return ALL_MOVES[validMove];
   }
 
-  async train(originalGame: Game2048, numberOfGames = 1) {
-    let gameManager = fakeGameFrom(clone(originalGame));
+  async train(originalGame: GameState, numberOfGames = 1) {
+    for (let i = 0; i < numberOfGames; i++) {
+      let gameManager = fakeGameFrom(clone(originalGame));
 
-    // NOTE: mutates gameManager
-    let result = await this.qlearn.playOnce({
-      game: (gameManager as unknown) as Game2048,
-      numberOfActions: 4,
-      getState: (game: Game2048) => {
-        let inputs = gameToTensor(game);
+      let result = await this.qlearn.playOnce<GameState, tf.Tensor1D, InternalMove, RewardInfo>({
+        game: gameManager,
+        getState: (game) => gameToTensor(game).reshape([16]),
+        isGameOver: (game) => game.over,
+        isValidAction: (rewardInformation) => rewardInformation.wasMoved,
+        getReward: (game, action) => moveAndCalculateReward(action, game),
+        getRankedActions: (game, state: tf.Tensor, useExternalAction) => {
+          let moveInfo;
 
-        return inputs.reshape([16]);
-      },
-      isGameOver: (game: Game2048) => {
-        return game.over;
-      },
-      getRankedActions: (game, state: tf.Tensor, useExternalAction) => {
-        let moveInfo;
+          if (useExternalAction) {
+            moveInfo = guidedMove(4, game);
+          } else {
+            moveInfo = this.model.act(state);
+          }
 
-        if (useExternalAction) {
-          moveInfo = guidedMove(4, game);
-        } else {
-          moveInfo = this.model.act(state);
-        }
+          return moveInfo.sorted;
+        },
+      });
 
-        // if the first action is invalid, the next rankedAction will be used
-        return moveInfo.sorted;
-      },
-      getReward: (game, action) => {
-        return moveAndCalculateReward(action, game);
-      },
-      isValidAction: (rewardInformation) => rewardInformation.wasMoved,
+      console.debug({
+        ...result,
+        score: gameManager.score,
+        epsilon: this.qlearn.config.epsilon,
+      });
+    }
+
+    await this.qlearn.learn({
+      reshapeState: (state) => state.reshape([16]),
+      predict: (input) => this.model.predict(input),
+      fit: (inputs, outputs) => this.model.fit(inputs, outputs),
     });
-
-    console.log(result);
-
-    await this.qlearn.learn();
   }
 }
 
-export function firstValidMoveOf(moveList: InternalMove[], game: Game2048) {
+export function firstValidMoveOf(moveList: InternalMove[], game: GameState) {
   let gameCopy = clone(game?.serialize?.() || game);
 
   for (let move of moveList) {
@@ -107,15 +105,7 @@ export function firstValidMoveOf(moveList: InternalMove[], game: Game2048) {
   throw new Error('No moves are valid, is the game over?');
 }
 
-function decayEpsilon(config: Required<Config>, steps: number) {
-  let { minEpsilon, maxEpsilon, epsilonDecaySpeed } = config;
-
-  config.epsilon = minEpsilon + (maxEpsilon - minEpsilon) * Math.exp(-epsilonDecaySpeed * steps);
-
-  return config.epsilon;
-}
-
-export function moveAndCalculateReward(move: InternalMove, currentGame: Game2048) {
+export function moveAndCalculateReward(move: InternalMove, currentGame: GameState) {
   let previousGame = clone(currentGame);
 
   executeMove(currentGame, ALL_MOVES[move]);
@@ -128,7 +118,7 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: Game2048
     previousScore: previousGame.score,
     over: currentGame.over,
     won: currentGame.won,
-    state: gameToTensor(currentGame),
+    nextState: gameToTensor(currentGame),
   };
 
   if (!moveData.wasMoved) {
@@ -154,5 +144,5 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: Game2048
   // next score is equal to current
   // it's possible that we need to do something that doesn't
   // change our score before getting to something good
-  return { reward: 0, ...moveData };
+  return { reward: 0.5, ...moveData };
 }

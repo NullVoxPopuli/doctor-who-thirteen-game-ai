@@ -18,7 +18,7 @@ export default class Game extends Service {
   }
 
   get state() {
-    return JSON.parse(localStorage.getItem('gameState')) as Game2048;
+    return JSON.parse(localStorage.getItem('gameState')) as GameState;
   }
 
   get duration() {

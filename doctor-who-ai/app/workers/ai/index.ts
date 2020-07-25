@@ -22,8 +22,8 @@ import { PWBWorker } from 'promise-worker-bi';
 let promiseWorker = new PWBWorker();
 
 type RnnMessage =
-  | { type: 'rnn'; action: 'train-batch'; data: Game2048 }
-  | { type: 'rnn'; action: 'get-move'; data: Game2048 }
+  | { type: 'rnn'; action: 'train-batch'; data: GameState }
+  | { type: 'rnn'; action: 'get-move'; data: GameState }
   | { type: 'rnn'; action: 'save'; data: never };
 
 type RandomMessage = { type: 'random'; action: 'get-move'; data: never };
@@ -41,7 +41,7 @@ promiseWorker.register(({ type, action, data }: Message) => {
   }
 });
 
-function handleRnn(action: RnnMessage['action'], data: Game2048) {
+function handleRnn(action: RnnMessage['action'], data: GameState) {
   switch (action) {
     case 'get-move':
       return rnn.getMove(data);

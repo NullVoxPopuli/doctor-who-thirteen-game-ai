@@ -33,13 +33,31 @@ declare type GameGrid = {
   cells: GameCells;
   size: number;
 };
-declare type Game2048 = {
+
+declare interface GameState {
   grid: GameGrid;
-  score: number;
   over: boolean;
   won: boolean;
+  keepPlaying: boolean;
+}
+
+declare interface Game2048 extends GameState {
+  score: number;
   serialize: () => Game2048;
   actuate?: () => void;
-  keepPlaying?: boolean;
   move: (move: 0 | 1 | 2 | 3) => void;
-};
+}
+
+declare module 'ai/rnn/vendor/app.map-worker-edition' {
+  export class GameManager implements Game2048 {
+    constructor(size: number, inputManager: any, actuator: any, storage: any);
+    score: number;
+    serialize: () => Game2048;
+    actuate?: (() => void) | undefined;
+    move: (move: 0 | 1 | 2 | 3) => void;
+    grid: GameGrid;
+    over: boolean;
+    won: boolean;
+    keepPlaying: boolean;
+  }
+}

@@ -1,7 +1,3 @@
-import tf from '@tensorflow/tfjs';
-import { DirectionKey } from 'doctor-who-ai/services/ai/consts';
-
-
 export interface Config {
   /**
    * number of actions
@@ -10,6 +6,13 @@ export interface Config {
    *  4 actions for up, down, left, and right
    */
   numActions: number;
+  /**
+   * number of input states
+   *
+   * @example
+   *  16 inputs for each of a 4x4 grid
+   */
+  numInputs: number;
 
   /**
    * (starting) chance of random action. Range: [0, 1]
@@ -24,13 +27,13 @@ export interface Config {
 
   /**
    * maximum chance of random action. Range: (0, 1]
-   * @default 0.1
+   * @default 0.9
    */
   maxEpsilon?: number;
 
   /**
    * How fast epsilon decays.
-   * @default 0.1
+   * @default 0.00001
    */
   epsilonDecaySpeed?: number;
 

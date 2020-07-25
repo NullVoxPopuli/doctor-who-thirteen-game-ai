@@ -59,32 +59,28 @@ export default class Bot extends Service {
   *gameLoop() {
     yield this.aiWorker.train(this.game.state);
 
-    // console.info('Starting Demonstration...');
+    console.info('Starting Demonstration...');
 
-    // while (!this.game.isGameOver) {
-    //   // let the external code calculate stuff?
-    //   yield timeout(250);
+    while (!this.game.isGameOver) {
+      // let the external code calculate stuff?
+      yield timeout(250);
 
-    //   let data = yield this.requestMove();
+      let data = yield this.requestMove();
 
-    //   if (!data) {
-    //     continue;
-    //   }
+      if (!data) {
+        continue;
+      }
 
-    //   if (!data.move) {
-    //     console.error(`No move was generated`, data);
+      if (!data.move) {
+        console.error(`No move was generated`, data);
 
-    //     return;
-    //   }
+        return;
+      }
 
-    //   if (data.trainingData) {
-    //     this.aiWorker.trainingData = data.trainingData;
-    //   }
+      this.game.pressKey(data.move);
+    }
 
-    //   this.game.pressKey(data.move);
-    // }
-
-    // this.autoRetry();
+    this.autoRetry();
   }
 
   @action

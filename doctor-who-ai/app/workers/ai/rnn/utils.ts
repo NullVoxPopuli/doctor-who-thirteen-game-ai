@@ -9,8 +9,8 @@ export const isEqual = (a: GameCells, b: GameCells) => {
     for (let j = 0; j < b.length; j++) {
       let av = a[i][j];
       let bv = b[i][j];
-      let avv = av && av.value;
-      let bvv = bv && bv.value;
+      let avv = av?.value;
+      let bvv = bv?.value;
 
       if (avv !== bvv) {
         return false;
@@ -21,11 +21,11 @@ export const isEqual = (a: GameCells, b: GameCells) => {
   return true;
 };
 
-export const gameTo1DArray = (game: Game2048) => {
+export const gameTo1DArray = (game: GameState) => {
   return game.grid.cells.flat().map((cell) => (cell ? cell.value : 0));
 };
 
-export const groupByValue = (game: Game2048) => {
+export const groupByValue = (game: GameState) => {
   let values = gameTo1DArray(game);
 
   return values.reduce((group, value) => {
@@ -35,23 +35,7 @@ export const groupByValue = (game: Game2048) => {
   }, {});
 };
 
-export async function loadDependencies(dependencies: string[]) {
-  await Promise.all(
-    dependencies.map(async (depUrl) => {
-      let response = await fetch(depUrl);
-      let script = await response.text();
-      let blob = new Blob([script], { type: 'text/javascript' });
-      let blobLink = URL.createObjectURL(blob);
-
-      // yolo
-      importScripts(blobLink);
-    })
-  );
-
-  self.postMessage({ type: 'ack' });
-}
-
-export function gameToTensor(game: Game2048) {
+export function gameToTensor(game: GameState) {
   let result: number[][] = [];
   let cells = game.grid.cells;
 
@@ -64,12 +48,27 @@ export function gameToTensor(game: Game2048) {
       let value = cell?.value || 0;
       let k = value === 0 ? 0 : Math.log2(value);
 
-      // result[i][j][k] = 1;
       result[i][j] = k;
-      // result.push(k);
     }
   }
 
   return tf.tensor2d(result);
 }
 
+export function printGame(game: GameState) {
+  let grid: number[][] = [];
+
+  let gameGrid = game.grid.cells;
+
+  for (let x = 0; x < gameGrid.length; x++) {
+    let row = gameGrid[x];
+
+    grid[x] = [];
+
+    for (let y = 0; y < row.length; y++) {
+      grid[x][y] = gameGrid[x][y]?.value || 0;
+    }
+  }
+
+  console.info(grid);
+}

@@ -22,7 +22,7 @@ export function guidedMove(numActions: number, gameManager: Game2048) {
   let bestHops = 1000;
 
   let rootNode: SearchNode = {
-    value: { model: gameManager },
+    value: { model: gameManager.serialize() },
     children: [],
   };
 

@@ -23,7 +23,7 @@ export default class AIWorker extends Service {
   @tracked isReady = false;
 
   @action
-  async train(seedGame: Game2048) {
+  async train(seedGame: GameState) {
     if (!this.worker) {
       this.worker = await createWorker();
     }
@@ -32,14 +32,14 @@ export default class AIWorker extends Service {
   }
 
   @action
-  async requestMove(state: Game2048, algorithm: Algorithm) {
+  async requestMove(state: GameState, algorithm: Algorithm) {
     if (!this.worker) {
       this.worker = await createWorker();
     }
 
     let options = { type: algorithm, action: 'get-move', data: state };
 
-    let { move } = await this.worker.postMessage(options);
+    let move = await this.worker.postMessage(options);
 
     return { move };
   }
