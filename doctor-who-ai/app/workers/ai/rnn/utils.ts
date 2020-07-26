@@ -37,6 +37,17 @@ export const groupByValue = (game: GameState) => {
 
 export function gameToTensor(game: GameState) {
   let result: number[][] = [];
+  // cells is
+  // - column 0
+  //   - row 0
+  //   - row 1
+  // - column 1
+  //   - row 0
+  //   - row 1
+  // etc
+  //
+  //  so when printing, keep that in mind. It may be useful to print using
+  //  the utility to print by row first
   let cells = game.grid.cells;
 
   for (let i = 0; i < cells.length; i++) {
@@ -53,22 +64,4 @@ export function gameToTensor(game: GameState) {
   }
 
   return tf.tensor2d(result);
-}
-
-export function printGame(game: GameState) {
-  let grid: number[][] = [];
-
-  let gameGrid = game.grid.cells;
-
-  for (let x = 0; x < gameGrid.length; x++) {
-    let row = gameGrid[x];
-
-    grid[x] = [];
-
-    for (let y = 0; y < row.length; y++) {
-      grid[x][y] = gameGrid[x][y]?.value || 0;
-    }
-  }
-
-  console.info(grid);
 }

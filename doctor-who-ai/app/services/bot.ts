@@ -10,6 +10,7 @@ import type AIWorker from './ai-worker';
 import type { Algorithm } from './ai-worker';
 import type Game from './game';
 import type GameHistory from './history';
+import {printGame} from 'doctor-who-ai/utils';
 
 export const BOT = {
   RNN: 'rnn',
@@ -36,6 +37,11 @@ export default class Bot extends Service {
   }
 
   @action
+  train() {
+    taskFor(this.trainTask).perform();
+  }
+
+  @action
   stop() {
     taskFor(this.gameLoop).cancelAll();
   }
@@ -43,6 +49,9 @@ export default class Bot extends Service {
   @action
   async requestMove() {
     let state = this.game.state;
+
+    printGame(this.game.state);
+    printGame(this.game.state, true);
 
     if (state !== null && !state.over) {
       if (!this.game.startTime) {
@@ -56,9 +65,12 @@ export default class Bot extends Service {
   }
 
   @restartableTask
-  *gameLoop() {
+  *trainTask() {
     yield this.aiWorker.train(this.game.state);
+  }
 
+  @restartableTask
+  *gameLoop() {
     console.info('Starting Demonstration...');
 
     while (!this.game.isGameOver) {

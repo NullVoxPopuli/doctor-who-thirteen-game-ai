@@ -60,6 +60,7 @@ export class QLearn {
 
     let totalReward = 0;
     let numSteps = 0;
+    let numInvalidSteps = 0;
 
     while (!isGameOver(game)) {
       let inputs = getState(game);
@@ -72,15 +73,18 @@ export class QLearn {
       let rewardInfo = getReward(game, action);
 
       if (!isValidAction(rewardInfo)) {
-        // skip the first, we already tried it
+        numInvalidSteps++;
+
+        // // skip the first, we already tried it
         for (let i = 1; i < rankedActions.length; i++) {
           action = rankedActions[i];
 
-          rewardInfo = getReward(game, action);
+          let rewardInfo2 = getReward(game, action);
 
-          if (isValidAction(rewardInfo)) {
+          if (isValidAction(rewardInfo2)) {
             break;
           }
+          numInvalidSteps++;
         }
       }
 
@@ -98,6 +102,7 @@ export class QLearn {
 
     return {
       numSteps,
+      numInvalidSteps,
     };
   }
 
@@ -106,13 +111,14 @@ export class QLearn {
   ) {
     let { reshapeState, predict, fit } = learningConfig;
 
-    let games = this.gameMemory.recallTopBy((item) => item.totalReward, 0.1);
+    // let games = this.gameMemory.recallRandomly()
+    let games = this.gameMemory.recallTopBy((item) => item.totalReward, 0.5);
 
     // smallest first, so we do the biggest rewards later, just in case that matters?
     // games = games.reverse();
 
     // try only learning from the highest reward game
-    games = [games[0]];
+    // games = [games[0]];
 
     for (let game of games) {
       let rewardMultiplier = (games.indexOf(game) + 1) / games.length;

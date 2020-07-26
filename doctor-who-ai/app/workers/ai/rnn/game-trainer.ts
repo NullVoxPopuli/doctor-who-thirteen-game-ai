@@ -1,4 +1,5 @@
 import tf from '@tensorflow/tfjs';
+import random from 'random';
 
 import { QLearn } from './learning/qlearn';
 
@@ -52,9 +53,11 @@ export class GameTrainer {
   async train(originalGame: GameState, numberOfGames = 1) {
     let trainingStats = {
       totalMoves: 0,
+      totalInvalid: 0,
       totalScore: 0,
       averageScore: 0,
       averageMoves: 0,
+      averageInvalid: 0,
       bestScore: 0,
     };
 
@@ -71,7 +74,8 @@ export class GameTrainer {
           let moveInfo;
 
           if (useExternalAction) {
-            moveInfo = guidedMove(4, game);
+            // moveInfo = guidedMove(4, game);
+            moveInfo = randomMoves(this.config.numActions);
           } else {
             moveInfo = this.model.act(state);
           }
@@ -83,10 +87,12 @@ export class GameTrainer {
       trainingStats.totalScore += gameManager.score;
       trainingStats.bestScore = Math.max(trainingStats.bestScore, gameManager.score);
       trainingStats.totalMoves += result.numSteps;
+      trainingStats.totalInvalid += result.numInvalidSteps;
     }
 
     trainingStats.averageScore = trainingStats.totalScore / numberOfGames;
     trainingStats.averageMoves = trainingStats.totalMoves / numberOfGames;
+    trainingStats.averageInvalid = trainingStats.totalInvalid / numberOfGames;
 
     console.debug(`"Learning"`);
 
@@ -154,4 +160,19 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: GameStat
   // it's possible that we need to do something that doesn't
   // change our score before getting to something good
   return { reward: 0.5, ...moveData };
+}
+
+function randomMoves(numActions: number) {
+  let result: number[] = [];
+  let generateMove = () => random.int(0, numActions - 1);
+
+  while (result.length < 4) {
+    let move = generateMove();
+
+    if (!result.includes(move)) {
+      result.push(move);
+    }
+  }
+
+  return { sorted: result };
 }

@@ -53,7 +53,7 @@ export function guidedMove(numActions: number, gameManager: Game2048) {
   function expandTree(node: SearchNode, level: number) {
     updateBest(node);
 
-    if (level >= 4) {
+    if (level >= 3) {
       return;
     }
 
