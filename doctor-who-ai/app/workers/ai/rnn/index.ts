@@ -22,8 +22,8 @@ async function ensureNetwork() {
   if (!network) {
     network = await getNetwork();
     agent = new GameTrainer(network, {
-      epsilon: 0.9,
-      epsilonDecaySpeed: 0.0000001,
+      epsilon: 0.99,
+      epsilonDecaySpeed: 0.00000001,
       numActions: 4,
       numInputs: 16,
       gameMemorySize: 100,
