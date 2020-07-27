@@ -84,6 +84,7 @@ export class QLearn {
           if (isValidAction(rewardInfo2)) {
             break;
           }
+
           numInvalidSteps++;
         }
       }
@@ -124,7 +125,7 @@ export class QLearn {
       let rewardMultiplier = (games.indexOf(game) + 1) / games.length;
 
       // Sample from memory
-      const batch = game.moveMemory.recallRandomly(1000);
+      const batch = game.moveMemory.recallRandomly(100);
       const states = batch.map(([state, , ,]) => state);
       const nextStates = batch.map(([, , , nextState]) =>
         nextState ? nextState : tf.zeros([this.config.numInputs])
@@ -159,7 +160,7 @@ export class QLearn {
       qsad.forEach((state) => state.dispose());
 
       // Reshape the batches to be fed to the network
-      let inputs = tf.tensor2d(x, [x.length, this.config.numInputs]);
+      let inputs = tf.tensor(x, [x.length, 4, 4, 1]);
       let outputs = tf.tensor2d(y, [y.length, this.config.numActions]);
 
       // Learn the Q(s, a) values given associated discounted rewards

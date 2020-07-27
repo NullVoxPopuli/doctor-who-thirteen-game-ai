@@ -50,8 +50,9 @@ export default class Bot extends Service {
   async requestMove() {
     let state = this.game.state;
 
-    printGame(this.game.state);
-    printGame(this.game.state, true);
+    if (state) {
+      printGame(state);
+    }
 
     if (state !== null && !state.over) {
       if (!this.game.startTime) {

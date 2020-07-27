@@ -44,7 +44,7 @@ export class GameTrainer {
 
   async getMove(game: GameState): Promise<DirectionKey> {
     let inputs = gameToTensor(game);
-    let moveInfo = this.model.act(inputs.reshape([16]));
+    let moveInfo = this.model.act(reshape(inputs));
     let validMove = firstValidMoveOf(moveInfo.sorted, game);
 
     return ALL_MOVES[validMove];
@@ -64,13 +64,13 @@ export class GameTrainer {
     for (let i = 0; i < numberOfGames; i++) {
       let gameManager = fakeGameFrom(clone(originalGame));
 
-      let result = await this.qlearn.playOnce<GameManager, tf.Tensor1D, InternalMove, RewardInfo>({
+      let result = await this.qlearn.playOnce<GameManager, tf.Tensor2D, InternalMove, RewardInfo>({
         game: gameManager,
-        getState: (game) => gameToTensor(game).reshape([16]),
+        getState: (game) => reshape(gameToTensor(game)),
         isGameOver: (game) => game.over,
         isValidAction: (rewardInformation) => rewardInformation.wasMoved,
         getReward: (game, action) => moveAndCalculateReward(action, game),
-        getRankedActions: (game, state, useExternalAction) => {
+        getRankedActions: (_game, state, useExternalAction) => {
           let moveInfo;
 
           if (useExternalAction) {
@@ -97,13 +97,17 @@ export class GameTrainer {
     console.debug(`"Learning"`);
 
     await this.qlearn.learn({
-      reshapeState: (state) => state.reshape([16]),
+      reshapeState: (state) => reshape(state),
       predict: (input) => this.model.predict(input),
       fit: (inputs, outputs) => this.model.fit(inputs, outputs),
     });
 
     return { ...trainingStats, epsilon: this.qlearn.config.epsilon };
   }
+}
+
+function reshape(tensor: tf.Tensor) {
+  return tensor.reshape([4, 4, 1]);
 }
 
 export function firstValidMoveOf(moveList: InternalMove[], game: GameState) {
@@ -163,11 +167,11 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: GameStat
 }
 
 function randomMoves(numActions: number) {
-  let result: number[] = [];
+  let result: InternalMove[] = [];
   let generateMove = () => random.int(0, numActions - 1);
 
   while (result.length < 4) {
-    let move = generateMove();
+    let move = generateMove() as InternalMove;
 
     if (!result.includes(move)) {
       result.push(move);

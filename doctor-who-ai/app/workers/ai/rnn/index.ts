@@ -23,10 +23,11 @@ async function ensureNetwork() {
     network = await getNetwork();
     agent = new GameTrainer(network, {
       epsilon: 0.99,
-      epsilonDecaySpeed: 0.0001,
+      epsilonDecaySpeed: 0.000001,
       numActions: 4,
       numInputs: 16,
-      gameMemorySize: 50,
+      inputShape: [4, 4],
+      gameMemorySize: 300,
       moveMemorySize: 10000,
     });
   }
@@ -40,8 +41,8 @@ export async function trainBatch(game: GameState) {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 100;
-  let gamesPerBatch = 10;
+  let batches = 400;
+  let gamesPerBatch = 100;
   let total = batches * gamesPerBatch;
 
   for (let i = 0; i < batches; i++) {
@@ -53,9 +54,10 @@ export async function trainBatch(game: GameState) {
 
     console.debug(`${total - games} left until displayed game. Total: ${totalGames}`);
     console.table([stats]);
+
+    await save(network);
   }
 
-  await save(network);
 
   console.timeEnd('Training');
 }
