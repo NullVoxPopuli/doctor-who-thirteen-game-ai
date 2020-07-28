@@ -125,7 +125,7 @@ export class QLearn {
       let rewardMultiplier = (games.indexOf(game) + 1) / games.length;
 
       // Sample from memory
-      const batch = game.moveMemory.recallRandomly(100);
+      const batch = game.moveMemory.recallRandomly(600);
       const states = batch.map(([state, , ,]) => state);
       const nextStates = batch.map(([, , , nextState]) =>
         nextState ? nextState : tf.zeros([this.config.numInputs])

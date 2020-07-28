@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-const fileName = 'conv-small.model';
+const fileName = 'conv-medium.model';
 const dataLocation = `indexeddb://${fileName}`;
 // const fileInfoLocation = `http://localhost:4200/${fileName}.json`;
 
@@ -46,7 +46,7 @@ function createNetwork() {
       tf.layers.conv2d({
         inputShape: [4, 4, 1],
         kernelSize: 2,
-        filters: 1,
+        filters: 3,
         padding: 'same',
         // strides: 1,
         activation: 'relu',
@@ -55,7 +55,7 @@ function createNetwork() {
       tf.layers.flatten(),
       layer({ name: 'hidden-0', units: Math.pow(2, 5), activation: 'relu' }),
       // layer({ name: 'hidden-1', units: Math.pow(2, 11), activation: 'relu' }),
-      // layer({ name: 'hidden-2', units: Math.pow(2, 9), activation: 'relu' }),
+      layer({ name: 'hidden-2', units: Math.pow(2, 9), activation: 'relu' }),
       layer({ name: 'hidden-3', units: Math.pow(2, 8), activation: 'relu' }),
       layer({ name: 'hidden-4', units: Math.pow(2, 7), activation: 'relu' }),
       // layer({ name: 'hidden-5', units: Math.pow(2, 6), activation: 'relu' }),
