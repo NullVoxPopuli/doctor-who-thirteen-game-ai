@@ -23,12 +23,12 @@ async function ensureNetwork() {
     network = await getNetwork();
     agent = new GameTrainer(network, {
       epsilon: 0.4,
-      maxEpsilon: 0.75,
+      maxEpsilon: 0.99,
       epsilonDecaySpeed: 0.000001,
       numActions: 4,
       numInputs: 16,
       inputShape: [4, 4],
-      gameMemorySize: 300,
+      gameMemorySize: 2000,
       moveMemorySize: 10000,
     });
   }

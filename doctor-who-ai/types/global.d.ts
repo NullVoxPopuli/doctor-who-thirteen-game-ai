@@ -22,7 +22,8 @@ declare type Value =
   | 16384
   | 32768;
 
-declare type Cell2048 = null | { value: Value; position: Record<string, any> };
+declare type CellPosition = { x: number; y: number };
+declare type Cell2048 = null | { value: Value; position: CellPosition };
 declare type GameCells = [
   [Cell2048, Cell2048, Cell2048, Cell2048],
   [Cell2048, Cell2048, Cell2048, Cell2048],

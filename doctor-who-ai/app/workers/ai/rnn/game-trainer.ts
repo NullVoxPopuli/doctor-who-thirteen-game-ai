@@ -145,25 +145,43 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: GameStat
     return { reward: -1.0, ...moveData };
   }
 
-  let grouped = groupByValue(previousGame);
-  let newGrouped = groupByValue(currentGame);
+  let distanceOld = totalDistance(previousGame);
+  let distanceNew = totalDistance(currentGame);
 
-  let highest = Math.max(...Object.keys(grouped).map(parseInt));
-  let newHighest = Math.max(...Object.keys(newGrouped).map(parseInt));
+  //    hopefully smaller / hopefully bigger
+  //           -> gets smaller when lots of stuff merged
+  //           -> gets smaller when fewer cells than previous
+  //           -> gets bigger when moving in the wrong direction
+  //           -> is 1 when no change
+  //
+  //   subtracting from one inverts the above.
+  //
+  //   NOTE: this *can* be negative.
+  //         - should we allow for small negative values?
+  //           (round to nearest 0.1?)
+  return 1 - distanceNew / distanceOld;
+}
 
-  // highest two were merged, we have a new highest
-  if (newHighest > highest) {
-    return { reward: 1, ...moveData };
+type GroupedPositions = { [key: number]: CellPosition[] };
+
+function totalDistance(game: GameState) {
+  let grouped: GroupedPositions = game.grid.cells.flat().reduce((grouped, cell) => {
+    if (!cell) {
+      return grouped;
+    }
+
+    grouped[cell.value] = grouped[cell.value] = [];
+
+    grouped[cell.value].push(cell.position);
+
+    return grouped;
+  }, {} as GroupedPositions);
+
+  let distance = 0; // Best?
+
+  for (let [value, positions] of Object.entries(grouped)) {
+    // get total collective distance between each position set?
   }
-
-  if (currentGame.score > previousGame.score) {
-    return { reward: 0.1, ...moveData };
-  }
-
-  // next score is equal to current
-  // it's possible that we need to do something that doesn't
-  // change our score before getting to something good
-  return { reward: 0.5, ...moveData };
 }
 
 function randomMoves(numActions: number) {

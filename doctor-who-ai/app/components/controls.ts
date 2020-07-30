@@ -12,18 +12,13 @@ export default class Controls extends Component {
   botOptions = OPTIONS;
 
   @action
-  train() {
-    this.bot.train();
+  toggleTrain() {
+    this.bot.toggleTraining();
   }
 
   @action
-  start() {
-    this.bot.play();
-  }
-
-  @action
-  stop() {
-    this.bot.stop();
+  togglePlay() {
+    this.bot.togglePlay();
   }
 
   @action

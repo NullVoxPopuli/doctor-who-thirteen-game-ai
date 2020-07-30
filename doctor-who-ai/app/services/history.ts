@@ -15,7 +15,7 @@ type GameInfo = {
   time: number;
 };
 
-const HISTORY_SIZE = 60;
+const HISTORY_SIZE = 30;
 
 const INITIAL = {
   bestScore: 0,

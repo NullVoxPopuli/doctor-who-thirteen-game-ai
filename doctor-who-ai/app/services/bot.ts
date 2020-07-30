@@ -10,7 +10,7 @@ import type AIWorker from './ai-worker';
 import type { Algorithm } from './ai-worker';
 import type Game from './game';
 import type GameHistory from './history';
-import {printGame} from 'doctor-who-ai/utils';
+import { printGame } from 'doctor-who-ai/utils';
 
 export const BOT = {
   RNN: 'rnn',
@@ -32,18 +32,25 @@ export default class Bot extends Service {
   @tracked currentBot: Algorithm = BOT.RNN;
 
   @action
-  play() {
-    taskFor(this.gameLoop).perform();
+  togglePlay() {
+    let task = taskFor(this.gameLoop);
+
+    if (task.isRunning) {
+      task.cancelAll();
+    } else {
+      task.perform();
+    }
   }
 
   @action
-  train() {
-    taskFor(this.trainTask).perform();
-  }
+  toggleTraining() {
+    let task = taskFor(this.trainTask);
 
-  @action
-  stop() {
-    taskFor(this.gameLoop).cancelAll();
+    if (task.isRunning) {
+      task.cancelAll();
+    } else {
+      task.perform();
+    }
   }
 
   @action
