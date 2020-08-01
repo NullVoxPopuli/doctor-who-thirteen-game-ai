@@ -7,17 +7,17 @@
 
   <button type='button' {{on 'click' this.toggleTrain}}>
     {{#if this.bot.trainTask.isRunning}}
-      Train
-    {{else}}
       Stop Training
+    {{else}}
+      Train
     {{/if}}
   </button>
 
   <button type='button' {{on 'click' this.togglePlay}}>
     {{#if this.bot.gameLoop.isRunning}}
-      Play
-    {{else}}
       Stop Playing
+    {{else}}
+      Play
     {{/if}}
   </button>
 

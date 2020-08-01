@@ -23,12 +23,12 @@ async function ensureNetwork() {
     network = await getNetwork();
     agent = new GameTrainer(network, {
       epsilon: 0.4,
-      maxEpsilon: 0.99,
-      epsilonDecaySpeed: 0.000001,
+      maxEpsilon: 0.3,
+      epsilonDecaySpeed: 0.0001,
       numActions: 4,
       numInputs: 16,
       inputShape: [4, 4],
-      gameMemorySize: 2000,
+      gameMemorySize: 7000,
       moveMemorySize: 10000,
     });
   }
@@ -43,12 +43,16 @@ export async function trainBatch(game: GameState) {
 
   let games = 0;
   let batches = 1500;
-  let gamesPerBatch = 100;
+  let gamesPerBatch = 1000;
   let total = batches * gamesPerBatch;
 
   for (let i = 0; i < batches; i++) {
-    console.debug(`Starting Batch ${i}`);
+    console.time(`Batch ${i}`);
     let stats = await agent.train(game, gamesPerBatch);
+
+    console.timeEnd(`Batch ${i}`);
+
+    agent.qlearn.decayEpsilon(i);
 
     games += gamesPerBatch;
     totalGames += gamesPerBatch;
@@ -58,7 +62,6 @@ export async function trainBatch(game: GameState) {
 
     await save(network);
   }
-
 
   console.timeEnd('Training');
 }

@@ -2,6 +2,8 @@ import * as tf from '@tensorflow/tfjs';
 
 import { Memory } from './memory';
 
+import { decayEpsilon } from './utils';
+
 import type { Config } from './types';
 
 interface RequiredRewardInfo {
@@ -46,6 +48,10 @@ export class QLearn {
       ...config,
     };
     this.gameMemory = new Memory<GameMemory>(config.gameMemorySize);
+  }
+
+  decayEpsilon(iterations: number) {
+    this.config.epsilon = decayEpsilon(this.config, iterations);
   }
 
   async playOnce<
@@ -96,8 +102,6 @@ export class QLearn {
 
       moveMemory.add([inputs, action, rewardInfo.reward, nextState]);
     }
-
-    decayEpsilon(this.config, this.playCount);
 
     this.gameMemory.add({ totalReward, moveMemory });
 
@@ -160,7 +164,7 @@ export class QLearn {
       qsad.forEach((state) => state.dispose());
 
       // Reshape the batches to be fed to the network
-      let inputs = tf.tensor(x, [x.length, 4, 4, 1]);
+      let inputs = tf.tensor(x, [x.length, 16]);
       let outputs = tf.tensor2d(y, [y.length, this.config.numActions]);
 
       // Learn the Q(s, a) values given associated discounted rewards
@@ -170,12 +174,4 @@ export class QLearn {
       outputs.dispose();
     }
   }
-}
-
-function decayEpsilon(config: Required<Config>, steps: number) {
-  let { minEpsilon, maxEpsilon, epsilonDecaySpeed } = config;
-
-  config.epsilon = minEpsilon + (maxEpsilon - minEpsilon) * Math.exp(-epsilonDecaySpeed * steps);
-
-  return config.epsilon;
 }

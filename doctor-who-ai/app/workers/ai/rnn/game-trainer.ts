@@ -42,12 +42,15 @@ export class GameTrainer {
     this.qlearn = new QLearn(config);
   }
 
-  async getMove(game: GameState): Promise<DirectionKey> {
+  async getMove(game: GameState): Promise<any> {
     let inputs = gameToTensor(game);
     let moveInfo = this.model.act(reshape(inputs));
     let validMove = firstValidMoveOf(moveInfo.sorted, game);
 
-    return ALL_MOVES[validMove];
+    let move = ALL_MOVES[validMove];
+    let rewardInfo = moveAndCalculateReward(validMove, fakeGameFrom(game));
+
+    return { move, rewardInfo };
   }
 
   async train(originalGame: GameState, numberOfGames = 1) {
@@ -107,7 +110,8 @@ export class GameTrainer {
 }
 
 function reshape(tensor: tf.Tensor) {
-  return tensor.reshape([4, 4, 1]);
+  // convo: 4, 4, 1
+  return tensor.reshape([16]);
 }
 
 export function firstValidMoveOf(moveList: InternalMove[], game: GameState) {
@@ -124,20 +128,24 @@ export function firstValidMoveOf(moveList: InternalMove[], game: GameState) {
   throw new Error('No moves are valid, is the game over?');
 }
 
-export function moveAndCalculateReward(move: InternalMove, currentGame: GameState) {
-  let previousGame = clone(currentGame);
+export function moveAndCalculateReward(move: InternalMove, game: Game2048) {
+  let previousGame = clone(game);
+  let nextGame = fakeGameFrom(game.serialize());
 
-  executeMove(currentGame, ALL_MOVES[move]);
+  executeMove(game, ALL_MOVES[move]);
 
-  let scoreChange = currentGame.score - previousGame.score;
+  // used for calculating distances. Can't have new tile.
+  executeMove(nextGame, ALL_MOVES[move], true);
+
+  let scoreChange = nextGame.score - previousGame.score;
   let moveData = {
     scoreChange,
-    wasMoved: !isEqual(previousGame.grid.cells, currentGame.grid.cells),
-    currentScore: currentGame.score,
+    wasMoved: !isEqual(previousGame.grid.cells, nextGame.grid.cells),
+    currentScore: nextGame.score,
     previousScore: previousGame.score,
-    over: currentGame.over,
-    won: currentGame.won,
-    nextState: gameToTensor(currentGame),
+    over: nextGame.over,
+    won: nextGame.won,
+    nextState: gameToTensor(nextGame),
   };
 
   if (!moveData.wasMoved) {
@@ -145,8 +153,12 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: GameStat
     return { reward: -1.0, ...moveData };
   }
 
+  let numTilesOld = numTiles(previousGame);
+  let numTilesNew = numTiles(nextGame);
+  let numTileDiff = numTilesNew - numTilesOld;
   let distanceOld = totalDistance(previousGame);
-  let distanceNew = totalDistance(currentGame);
+  // NOTE: there are never less than two tiles
+  let distanceNew = totalDistance(nextGame);
 
   //    hopefully smaller / hopefully bigger
   //           -> gets smaller when lots of stuff merged
@@ -159,10 +171,16 @@ export function moveAndCalculateReward(move: InternalMove, currentGame: GameStat
   //   NOTE: this *can* be negative.
   //         - should we allow for small negative values?
   //           (round to nearest 0.1?)
-  return 1 - distanceNew / distanceOld;
+  let reward = 1 - distanceNew / distanceOld;
+
+  return { reward: reward || 0, ...moveData, distanceNew, distanceOld };
 }
 
 type GroupedPositions = { [key: number]: CellPosition[] };
+
+function numTiles(game: GameState) {
+  return game.grid.cells.flat().filter(Boolean).length;
+}
 
 function totalDistance(game: GameState) {
   let grouped: GroupedPositions = game.grid.cells.flat().reduce((grouped, cell) => {
@@ -170,9 +188,9 @@ function totalDistance(game: GameState) {
       return grouped;
     }
 
-    grouped[cell.value] = grouped[cell.value] = [];
+    grouped[cell.value] = grouped[cell.value] || [];
 
-    grouped[cell.value].push(cell.position);
+    grouped[cell.value].push(cell.position || { x: cell.x, y: cell.y });
 
     return grouped;
   }, {} as GroupedPositions);
@@ -180,8 +198,28 @@ function totalDistance(game: GameState) {
   let distance = 0; // Best?
 
   for (let [value, positions] of Object.entries(grouped)) {
-    // get total collective distance between each position set?
+    // need at least two things to calculate position
+    if (positions.length < 2) {
+      continue;
+    }
+
+    // create a list of pairs to find distances between
+    let pairs = [];
+
+    for (let i = 0; i < positions.length; i++) {
+      for (let j = i + 1; j < positions.length; j++) {
+        pairs.push([positions[i], positions[j]]);
+      }
+    }
+
+    for (let [a, b] of pairs) {
+      let localDistance = Math.hypot(b.x - a.x, b.y - a.y);
+
+      distance += localDistance;
+    }
   }
+
+  return distance;
 }
 
 function randomMoves(numActions: number) {

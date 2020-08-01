@@ -9,12 +9,12 @@ import type { DirectionKey } from './consts';
 // iife();
 import './rnn/vendor/app.map-worker-edition';
 
-export function executeMove(gameManager: Game2048, move: DirectionKey) {
+export function executeMove(gameManager: Game2048, move: DirectionKey, skipNewTile = false) {
   let internalMove = MOVE_KEY_MAP[move];
 
   gameManager.actuate = voidFn;
   gameManager.keepPlaying = true;
-  gameManager.move(internalMove);
+  gameManager.move(internalMove, skipNewTile);
 }
 
 export function imitateMove(model: Game2048, move: DirectionKey) {

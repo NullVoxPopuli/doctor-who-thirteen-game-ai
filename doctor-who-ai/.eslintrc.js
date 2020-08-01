@@ -31,7 +31,19 @@ const base = {
     'no-unused-vars': 'off', // handled be typescript?
     'no-console': [
       'error',
-      { allow: ['debug', 'warn', 'error', 'info', 'group', 'groupEnd', 'groupCollapsed'] },
+      {
+        allow: [
+          'debug',
+          'warn',
+          'error',
+          'info',
+          'group',
+          'groupEnd',
+          'groupCollapsed',
+          'time',
+          'timeEnd',
+        ],
+      },
     ],
 
     'padding-line-between-statements': [

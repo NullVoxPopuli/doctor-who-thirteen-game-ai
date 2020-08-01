@@ -65,3 +65,4 @@ export function gameToTensor(game: GameState) {
 
   return tf.tensor2d(result);
 }
+

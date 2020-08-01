@@ -57,18 +57,21 @@ export default class Bot extends Service {
   async requestMove() {
     let state = this.game.state;
 
-    if (state) {
-      printGame(state);
-    }
+    // if (state) {
+    //   printGame(state);
+    // }
 
     if (state !== null && !state.over) {
       if (!this.game.startTime) {
         this.game.startTime = new Date().getDate();
       }
 
-      let moveData = await this.aiWorker.requestMove(state, this.currentBot);
+      let { move, _rewardInfo } = await this.aiWorker.requestMove(state, this.currentBot);
+      // let { reward, distanceNew, distanceOld } = rewardInfo;
 
-      return moveData;
+      // console.log('^ from, to v', { reward, distanceNew, distanceOld });
+
+      return { move };
     }
   }
 
@@ -97,8 +100,11 @@ export default class Bot extends Service {
         return;
       }
 
+
       this.game.pressKey(data.move);
     }
+
+    yield timeout(5000);
 
     this.autoRetry();
   }
@@ -118,7 +124,7 @@ export default class Bot extends Service {
 
       await timeout(1000);
 
-      this.play();
+      this.gameLoop.perform();
     }
   }
 }

@@ -87,3 +87,11 @@
   justify-content: start;
   align-items: center;
 }
+
+/* hack at the game's CSS */
+body .game-container .game-message p {
+  margin-top: 28rem;
+}
+.game-explanation {
+  display: none;
+}

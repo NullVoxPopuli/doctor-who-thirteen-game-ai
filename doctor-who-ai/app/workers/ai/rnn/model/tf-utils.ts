@@ -1,17 +1,17 @@
 import * as tf from '@tensorflow/tfjs';
 
-const fileName = 'conv-large.model';
+const fileName = 'dense-med-distance1.model';
 const dataLocation = `indexeddb://${fileName}`;
 // const fileInfoLocation = `http://localhost:4200/${fileName}.json`;
 
 export async function useGPU() {
   if (tf.getBackend() !== 'webgl') {
     await tf.setBackend('webgl');
+
+    console.debug(`TensorFlow Backend: `, tf.getBackend());
   }
 
   await tf.ready();
-
-  console.debug(`TensorFlow Backend: `, tf.getBackend());
 }
 
 export async function save(network: tf.LayersModel) {
@@ -43,23 +43,29 @@ function createNetwork() {
   let model = tf.sequential({
     name: '2048-move-network',
     layers: [
-      tf.layers.conv2d({
-        inputShape: [4, 4, 1],
-        kernelSize: 2,
-        filters: 3,
-        padding: 'same',
-        // strides: 1,
+      layer({
+        name: 'input-receive',
+        units: Math.pow(2, 10),
         activation: 'relu',
+        inputShape: [16],
       }),
-      tf.layers.maxPooling2d({ poolSize: 2, strides: 1 }),
-      tf.layers.flatten(),
+      // tf.layers.conv2d({
+      //   inputShape: [4, 4, 1],
+      //   kernelSize: 2,
+      //   filters: 3,
+      //   padding: 'same',
+      //   // strides: 1,
+      //   activation: 'relu',
+      // }),
+      // tf.layers.maxPooling2d({ poolSize: 2, strides: 1 }),
+      // tf.layers.flatten(),
       // layer({ name: 'hidden-0', units: Math.pow(2, 5), activation: 'relu' }),
       layer({ name: 'hidden-1', units: Math.pow(2, 11), activation: 'relu' }),
       layer({ name: 'hidden-2', units: Math.pow(2, 9), activation: 'relu' }),
       layer({ name: 'hidden-3', units: Math.pow(2, 8), activation: 'relu' }),
       layer({ name: 'hidden-4', units: Math.pow(2, 7), activation: 'relu' }),
-      layer({ name: 'hidden-5', units: Math.pow(2, 6), activation: 'relu' }),
-      layer({ name: 'hidden-6', units: Math.pow(2, 5), activation: 'relu' }),
+      // layer({ name: 'hidden-5', units: Math.pow(2, 6), activation: 'relu' }),
+      // layer({ name: 'hidden-6', units: Math.pow(2, 5), activation: 'relu' }),
       layer({ name: 'output', units: 4, activation: 'softmax' }),
     ],
   });

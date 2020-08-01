@@ -39,9 +39,9 @@ export default class AIWorker extends Service {
 
     let options = { type: algorithm, action: 'get-move', data: state };
 
-    let move = await this.worker.postMessage(options);
+    let info = await this.worker.postMessage(options);
 
-    return { move };
+    return info;
   }
 
   willDestroy() {
