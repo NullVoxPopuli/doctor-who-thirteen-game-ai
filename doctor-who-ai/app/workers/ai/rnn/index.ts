@@ -24,8 +24,8 @@ async function ensureNetwork() {
     agent = new GameTrainer(network, {
       epsilon: 0.01,
       minEpsilon: 0.0001,
-      maxEpsilon: 0.2,
-      epsilonDecaySpeed: 0.00001,
+      maxEpsilon: 0.1,
+      epsilonDecaySpeed: 0.001,
       numActions: 4,
       numInputs: 16,
       inputShape: [16],
