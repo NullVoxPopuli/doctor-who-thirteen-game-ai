@@ -54,13 +54,16 @@ export class GameTrainer {
   }
 
   async train(originalGame: GameState, numberOfGames = 1) {
+    let scores = [];
     let trainingStats = {
       totalMoves: 0,
       totalInvalid: 0,
       totalScore: 0,
       averageScore: 0,
       averageMoves: 0,
+      medianScore: 0,
       averageInvalid: 0,
+      minScore: Infinity,
       bestScore: 0,
     };
 
@@ -73,10 +76,13 @@ export class GameTrainer {
         isGameOver: (game) => game.over,
         isValidAction: (rewardInformation) => rewardInformation.wasMoved,
         getReward: (game, action) => moveAndCalculateReward(action, game),
-        getRankedActions: (_game, state, useExternalAction) => {
+        getRankedActions: (game, state, useExternalAction) => {
           let moveInfo;
 
-          if (useExternalAction) {
+          let needsLearning = game.score > trainingStats.medianScore;
+          let useRandom = needsLearning && Math.random() < 0.2;
+
+          if (useExternalAction || useRandom) {
             // moveInfo = guidedMove(4, game);
             moveInfo = randomMoves(this.config.numActions);
           } else {
@@ -87,8 +93,11 @@ export class GameTrainer {
         },
       });
 
+      scores.push(gameManager.score);
       trainingStats.totalScore += gameManager.score;
       trainingStats.bestScore = Math.max(trainingStats.bestScore, gameManager.score);
+      trainingStats.minScore = Math.min(trainingStats.minScore, gameManager.score);
+      trainingStats.medianScore = scores.sort()[Math.round((scores.length - 1) / 2)];
       trainingStats.totalMoves += result.numSteps;
       trainingStats.totalInvalid += result.numInvalidSteps;
     }
@@ -173,6 +182,9 @@ export function moveAndCalculateReward(move: InternalMove, game: Game2048) {
   //           (round to nearest 0.1?)
   let reward = 1 - distanceNew / distanceOld;
 
+  // console.log({ reward, distanceNew, distanceOld });
+  // debugger;
+
   return { reward: reward || 0, ...moveData, distanceNew, distanceOld };
 }
 
@@ -215,7 +227,8 @@ function totalDistance(game: GameState) {
     for (let [a, b] of pairs) {
       let localDistance = Math.hypot(b.x - a.x, b.y - a.y);
 
-      distance += localDistance;
+      // harshly punish things farther away
+      distance += Math.pow(localDistance, 2);
     }
   }
 

@@ -47,7 +47,7 @@ export class QLearn {
       epsilonDecaySpeed: 0.00001,
       ...config,
     };
-    this.gameMemory = new Memory<GameMemory>(config.gameMemorySize);
+    this.gameMemory = new Memory<GameMemory>(config.gameMemorySize, 0.1, (via) => via.totalReward);
   }
 
   decayEpsilon(iterations: number) {

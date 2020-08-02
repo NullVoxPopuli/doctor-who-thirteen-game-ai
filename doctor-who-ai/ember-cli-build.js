@@ -41,7 +41,8 @@ function configureWorkerTree({ isProduction, hash }) {
     let rollupTree = new Rollup(workerDir, {
       rollup: {
         input: entryPath,
-        watch: true,
+        // watch true prevents editors from safely saving
+        watch: false,
         output: [
           {
             file: `workers/${name}.js`,

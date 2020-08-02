@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-const fileName = 'dense-med-distance1.model';
+const fileName = 'dense-sm-distance1.model';
 const dataLocation = `indexeddb://${fileName}`;
 // const fileInfoLocation = `http://localhost:4200/${fileName}.json`;
 
@@ -62,8 +62,8 @@ function createNetwork() {
       // layer({ name: 'hidden-0', units: Math.pow(2, 5), activation: 'relu' }),
       layer({ name: 'hidden-1', units: Math.pow(2, 11), activation: 'relu' }),
       layer({ name: 'hidden-2', units: Math.pow(2, 9), activation: 'relu' }),
-      layer({ name: 'hidden-3', units: Math.pow(2, 8), activation: 'relu' }),
-      layer({ name: 'hidden-4', units: Math.pow(2, 7), activation: 'relu' }),
+      // layer({ name: 'hidden-3', units: Math.pow(2, 8), activation: 'relu' }),
+      // layer({ name: 'hidden-4', units: Math.pow(2, 7), activation: 'relu' }),
       // layer({ name: 'hidden-5', units: Math.pow(2, 6), activation: 'relu' }),
       // layer({ name: 'hidden-6', units: Math.pow(2, 5), activation: 'relu' }),
       layer({ name: 'output', units: 4, activation: 'softmax' }),

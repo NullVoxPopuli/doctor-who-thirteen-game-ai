@@ -2,18 +2,32 @@ import random from 'random';
 
 export class Memory<T> {
   declare size: number;
+  declare keepBestPercent?: number;
+  declare keepBestVia?: (mem: T) => number;
 
   #memory: T[] = [];
 
-  constructor(size: number) {
+  constructor(size: number, keepBestPercent?: number, keepBestVia?: (mem: T) => number) {
     this.size = size;
+    this.keepBestPercent = keepBestPercent;
+    this.keepBestVia = keepBestVia;
   }
 
   add(item: T) {
     this.#memory.push(item);
 
     if (this.#memory.length > this.size) {
-      this.#memory.shift();
+      if (this.keepBestVia && this.keepBestPercent) {
+        let kept = this.recallTopBy(this.keepBestVia, this.keepBestPercent);
+
+        for (let i = 0; i < this.#memory.length; i++) {
+          if (!kept.includes(this.#memory[i])) {
+            this.#memory.splice(i, 1);
+          }
+        }
+      } else {
+        this.#memory.shift();
+      }
     }
   }
 
@@ -21,7 +35,7 @@ export class Memory<T> {
     return sample(this.#memory, count);
   }
 
-  recallTopBy(getter: (item: T) => number, percent: number = 0.1) {
+  recallTopBy(getter: (item: T) => number, percent = 0.1) {
     let sorted = this.#memory.sort((a, b) => getter(b) - getter(a));
 
     let numItems = Math.ceil(sorted.length * percent);
