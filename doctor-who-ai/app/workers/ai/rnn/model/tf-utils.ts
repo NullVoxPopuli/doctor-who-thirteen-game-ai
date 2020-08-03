@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-const fileName = 'dense-sm-distance1.model';
+const fileName = 'conv-small-distance1.model';
 const dataLocation = `indexeddb://${fileName}`;
 // const fileInfoLocation = `http://localhost:4200/${fileName}.json`;
 
@@ -38,35 +38,58 @@ export async function getNetwork(): Promise<tf.LayersModel> {
 }
 
 function createNetwork() {
-  let input = tf.input({ shape: [4, 4] });
+  let inputForHorizontal = tf.input({ shape: [4, 4, 1] });
+  let inputForVertical = tf.input({ shape: [4, 4, 1] });
 
-  let model = tf.sequential({ name: '2048-move-network' });
+  let horizontalConv = tf.layers
+    .conv2d({
+      inputShape: [4, 4],
+      kernelSize: [2, 1],
+      strides: 1,
+      padding: 'valid',
+      filters: 32,
+      activation: 'relu',
+    })
+    .apply(inputForHorizontal);
 
-  let horizontalConv = tf.layers.conv2d({
-    inputShape: [4, 4],
-    kernelSize: [2, 1],
-    strides: 1,
-    padding: 'valid',
-    filters: 512,
-    activation: 'relu',
+  let verticalConv = tf.layers
+    .conv2d({
+      inputShape: [4, 4],
+      kernelSize: [1, 2],
+      strides: 1,
+      padding: 'valid',
+      filters: 32,
+      activation: 'relu',
+    })
+    .apply(inputForVertical);
+
+  let horizontalDense = tf.layers
+    .dense({ name: 'horizontal', units: 256, activation: 'relu' })
+    .apply(horizontalConv);
+
+  let verticalDense = tf.layers
+    .dense({ name: 'vertical', units: 256, activation: 'relu' })
+    .apply(verticalConv);
+
+  let concatLayer = tf.layers
+    .concatenate()
+    .apply([tf.layers.flatten().apply(horizontalDense), tf.layers.flatten().apply(verticalDense)]);
+
+  let hidden1 = tf.layers
+    .dense({ name: 'hidden-1', units: 1024, activation: 'relu' })
+    .apply(concatLayer);
+
+  let hidden2 = tf.layers
+    .dense({ name: 'hidden-2', units: 1024, activation: 'relu' })
+    .apply(hidden1);
+
+  let output = tf.layers.dense({ name: 'output', units: 4, activation: 'softmax' }).apply(hidden2);
+
+  let model = tf.model({
+    name: '2048-move-network',
+    inputs: [inputForVertical, inputForHorizontal],
+    outputs: output,
   });
-  let verticalConv = tf.layers.conv2d({
-    inputShape: [4, 4],
-    kernelSize: [1, 2],
-    strides: 1,
-    padding: 'valid',
-    filters: 512,
-    activation: 'relu',
-  });
-
-  model.add(concatLayer);
-  model.add(tf.layers.flatten())
-
-
-  let output = tf.layers.dense({ name: 'output', units: 4, activation: 'softmax' });
-
-  model.add(output);
-
 
   // let layer = tf.layers.dense;
   // let model = tf.sequential({

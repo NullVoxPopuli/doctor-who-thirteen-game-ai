@@ -119,8 +119,7 @@ export class GameTrainer {
 }
 
 function reshape(tensor: tf.Tensor) {
-  // convo: 4, 4, 1
-  return tensor.reshape([16]);
+  return tensor.reshape([4, 4, 1]);
 }
 
 export function firstValidMoveOf(moveList: InternalMove[], game: GameState) {

@@ -164,7 +164,7 @@ export class QLearn {
       qsad.forEach((state) => state.dispose());
 
       // Reshape the batches to be fed to the network
-      let inputs = tf.tensor(x, [x.length, 16]);
+      let inputs = tf.tensor(x, [x.length, 4, 4, 1]);
       let outputs = tf.tensor2d(y, [y.length, this.config.numActions]);
 
       // Learn the Q(s, a) values given associated discounted rewards
