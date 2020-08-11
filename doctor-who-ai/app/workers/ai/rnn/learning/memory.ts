@@ -31,6 +31,10 @@ export class Memory<T> {
     }
   }
 
+  recall() {
+    return this.#memory;
+  }
+
   recallRandomly(count: number) {
     return sample(this.#memory, count);
   }

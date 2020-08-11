@@ -49,4 +49,14 @@ export interface Config {
    * How many moves per game to keep in memory
    */
   moveMemorySize: number;
+
+  /**
+   * How much future rewards are weighted
+   */
+  learningDiscount: number;
+
+  /**
+   * How much to weigh the "next" reward
+   */
+  learningRate: number;
 }

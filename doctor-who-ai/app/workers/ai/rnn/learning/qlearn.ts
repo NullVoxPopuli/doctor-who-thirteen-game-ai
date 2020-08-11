@@ -5,10 +5,23 @@ import { Memory } from './memory';
 import { decayEpsilon } from './utils';
 
 import type { Config } from './types';
+import { TypedArray } from '@tensorflow/tfjs';
+import { highestValue } from '../../game';
 
 interface RequiredRewardInfo {
   nextState: tf.Tensor;
   reward: number;
+}
+
+type Maybe<T> = T | undefined;
+type ActionMemory = [tf.Tensor, number, number, Maybe<tf.Tensor>];
+
+interface GameMemory {
+  score: number;
+  moves: number;
+  highestValue: number;
+  totalReward: number;
+  moveMemory: Memory<ActionMemory>;
 }
 
 type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo> = {
@@ -16,22 +29,20 @@ type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo> = 
   getState: (game: Game) => State;
   isGameOver: (game: Game) => boolean;
   getRankedActions: (game: Game, state: State, useExternalAction: boolean) => Action[];
+  takeAction: (game: Game, action: Action) => void;
   getReward: (game: Game, action: Action) => RewardInfo;
   isValidAction: (rewardInfo: RewardInfo) => boolean;
+  afterGame: (gameInfo: {
+    game: Game;
+    totalReward: number;
+    moveMemory: Memory<ActionMemory>;
+  }) => Promise<void>;
 };
 
 type LearningConfig<Prediction> = {
   reshapeState: (state: tf.Tensor) => tf.Tensor;
   predict: (input: tf.Tensor) => Prediction;
   fit: (inputs: tf.Tensor, outputs: tf.Tensor) => Promise<tf.History>;
-};
-
-type Maybe<T> = T | undefined;
-type ActionMemory = [tf.Tensor, number, number, Maybe<tf.Tensor>];
-
-type GameMemory = {
-  totalReward: number;
-  moveMemory: Memory<ActionMemory>;
 };
 
 export class QLearn {
@@ -47,7 +58,11 @@ export class QLearn {
       epsilonDecaySpeed: 0.00001,
       ...config,
     };
-    this.gameMemory = new Memory<GameMemory>(config.gameMemorySize, 0.1, (via) => via.totalReward);
+    this.gameMemory = new Memory<GameMemory>(
+      config.gameMemorySize,
+      0.025,
+      (via) => via.totalReward
+    );
   }
 
   decayEpsilon(iterations: number) {
@@ -60,7 +75,15 @@ export class QLearn {
     Action extends number,
     RewardInfo extends RequiredRewardInfo
   >(lessonConfig: LessonConfig<Game, State, Action, RewardInfo>) {
-    let { game, isGameOver, getState, getRankedActions, getReward, isValidAction } = lessonConfig;
+    let {
+      game,
+      isGameOver,
+      getState,
+      getRankedActions,
+      takeAction,
+      getReward,
+      isValidAction,
+    } = lessonConfig;
 
     let moveMemory = new Memory<ActionMemory>(this.config.moveMemorySize);
 
@@ -74,36 +97,38 @@ export class QLearn {
       let useExternalAction = Math.random() < this.config.epsilon;
       let rankedActions = getRankedActions(game, inputs, useExternalAction);
 
-      let action = rankedActions[0];
+      let action: Action | undefined;
 
-      let rewardInfo = getReward(game, action);
+      // explore the move space a little more than just playind would allow
+      for (let possibleAction of rankedActions) {
+        let rewardInfo = getReward(game, possibleAction);
+        let nextState = isGameOver(game) ? undefined : rewardInfo.nextState;
 
-      if (!isValidAction(rewardInfo)) {
-        numInvalidSteps++;
+        moveMemory.add([inputs, possibleAction, rewardInfo.reward, nextState]);
 
-        // // skip the first, we already tried it
-        for (let i = 1; i < rankedActions.length; i++) {
-          action = rankedActions[i];
-
-          let rewardInfo2 = getReward(game, action);
-
-          if (isValidAction(rewardInfo2)) {
-            break;
-          }
-
+        if (!action && isValidAction(rewardInfo)) {
+          action = possibleAction;
+          totalReward += rewardInfo.reward;
+          break;
+        } else if (!action) {
           numInvalidSteps++;
         }
       }
 
+      takeAction(game, action || rankedActions[0]);
+
       numSteps++;
       this.playCount++;
-
-      let nextState = isGameOver(game) ? undefined : rewardInfo.nextState;
-
-      moveMemory.add([inputs, action, rewardInfo.reward, nextState]);
     }
 
-    this.gameMemory.add({ totalReward, moveMemory });
+    await lessonConfig.afterGame({ game, totalReward, moveMemory });
+    // this.gameMemory.add({
+    //   totalReward,
+    //   moveMemory,
+    //   score: game.score,
+    //   moves: numSteps,
+    //   highestValue: highestValue(game),
+    // });
 
     return {
       numSteps,
@@ -114,64 +139,81 @@ export class QLearn {
   async learn<Prediction extends tf.Tensor<tf.Rank>[] | tf.Tensor<tf.Rank>>(
     learningConfig: LearningConfig<Prediction>
   ) {
-    let { reshapeState, predict, fit } = learningConfig;
+    // let games: GameMemory[] = this.gameMemory.recallRandomly(300);
+    let games = this.gameMemory
+      .recallTopBy((item) => item.score, 0.5)
+      .sort((a, z) => z.score - a.score);
 
-    // let games = this.gameMemory.recallRandomly()
-    let games = this.gameMemory.recallTopBy((item) => item.totalReward, 0.5);
-
-    // smallest first, so we do the biggest rewards later, just in case that matters?
-    // games = games.reverse();
-
-    // try only learning from the highest reward game
-    // games = [games[0]];
+    let bestReward = Math.max(...games.filter((game) => game.score));
 
     for (let game of games) {
-      let rewardMultiplier = (games.indexOf(game) + 1) / games.length;
+      let weight = game.score / bestReward;
 
-      // Sample from memory
-      const batch = game.moveMemory.recallRandomly(600);
-      const states = batch.map(([state, , ,]) => state);
-      const nextStates = batch.map(([, , , nextState]) =>
-        nextState ? nextState : tf.zeros([this.config.numInputs])
+      await this.learnFromGame(game, learningConfig, weight);
+    }
+  }
+
+  async learnFromGame<Prediction extends tf.Tensor<tf.Rank>[] | tf.Tensor<tf.Rank>>(
+    game: GameMemory,
+    learningConfig: LearningConfig<Prediction>,
+    gameWeight?: number
+  ) {
+    let { reshapeState, predict, fit } = learningConfig;
+
+    let { learningRate, learningDiscount } = this.config;
+
+    // Sample from memory
+    const batch = game.moveMemory.recallRandomly(200);
+
+    let x: TypedArray[] = [];
+    let y: number[] = [];
+
+    // Update the states rewards with the discounted next states rewards
+    batch.forEach(([state, action, reward, nextState], index) => {
+      let predictionForState = predict(reshapeState(state));
+      let predictionForNextState = predict(
+        reshapeState(nextState || tf.zeros([this.config.numInputs]))
       );
 
-      // Predict the values of each action at each state
-      const qsa = states.map((state) => predict(reshapeState(state)));
+      let inputs = state.dataSync();
+      let qsa = predictionForState.dataSync();
+      let nextQsaMax = predictionForNextState.max();
 
-      // Predict the values of each action at each next state
-      const qsad = nextStates.map((nextState) => predict(reshapeState(nextState)));
+      if (nextState) {
+        // Q[s,a] = Q[s,a] + lr*(r + y*np.max(Q[s1,:]) - Q[s,a])
+        qsa[action] =
+          qsa[action] + learningRate * (reward + learningDiscount * nextQsaMax - qsa[action]);
+      } else {
+        qsa[action] = reward;
+      }
 
-      let x = [].fill(0);
-      let y = [].fill(0);
+      if (gameWeight) {
+        qsa[action] *= gameWeight;
+      }
 
-      // Update the states rewards with the discounted next states rewards
-      batch.forEach(([state, action, reward, nextState], index) => {
-        const currentQ = qsa[index];
-
-        if (nextState) {
-          currentQ[action] =
-            reward * rewardMultiplier + this.config.epsilonDecaySpeed * qsad[index].max();
-        } else {
-          currentQ[action] = reward * rewardMultiplier;
+      for (let i = 0; i < this.config.numActions; i++) {
+        if (i === action) {
+          continue;
         }
 
-        x.push(state.dataSync());
-        y.push(currentQ.dataSync());
-      });
+        qsa[i] = 0;
+      }
 
-      // Clean unused tensors
-      qsa.forEach((state) => state.dispose());
-      qsad.forEach((state) => state.dispose());
+      x.push(inputs);
+      y.push(qsa);
 
-      // Reshape the batches to be fed to the network
-      let inputs = tf.tensor(x, [x.length, 4, 4, 1]);
-      let outputs = tf.tensor2d(y, [y.length, this.config.numActions]);
+      predictionForState.dispose();
+      predictionForNextState.dispose();
+    });
 
-      // Learn the Q(s, a) values given associated discounted rewards
-      await fit(inputs, outputs);
+    // Reshape the batches to be fed to the network
+    let inputs = tf.tensor(x, [x.length, 4, 4, 1]);
+    let outputs = tf.tensor(y, [y.length, this.config.numActions]);
 
-      inputs.dispose();
-      outputs.dispose();
-    }
+    // Learn the Q(s, a) values given associated discounted rewards
+    await fit(inputs, outputs);
+
+    inputs.dispose();
+    outputs.dispose();
   }
 }

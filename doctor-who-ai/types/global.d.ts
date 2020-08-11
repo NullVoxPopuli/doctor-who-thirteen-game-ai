@@ -60,5 +60,6 @@ declare module 'ai/rnn/vendor/app.map-worker-edition' {
     over: boolean;
     won: boolean;
     keepPlaying: boolean;
+    addStartTiles: () => void;
   }
 }

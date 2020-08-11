@@ -66,3 +66,52 @@ export function gameToTensor(game: GameState) {
   return tf.tensor2d(result);
 }
 
+export function printGame(game: GameState, useNum = false) {
+  let grid: number[][] = [];
+
+  let gameGrid = game.grid.cells;
+
+  for (let x = 0; x < gameGrid.length; x++) {
+    let column = gameGrid[x];
+
+    grid[x] = [];
+
+    for (let y = 0; y < column.length; y++) {
+      let value = gameGrid[y][x]?.value || 0;
+
+      if (useNum) {
+        value = value === 0 ? 0 : Math.log2(value);
+      }
+
+      grid[x][y] = value;
+    }
+  }
+
+  let max = Math.max(...grid.flat());
+  let width = `${max}`.length;
+
+  let toString = (num: number) => {
+    let result = `${num}`;
+    let existing = result.length;
+
+    for (let i = 0; i < width - existing; i++) {
+      result = ` ${result}`;
+    }
+
+    return result;
+  };
+
+  let result = `Game State:\n`;
+
+  for (let y = 0; y < grid.length; y++) {
+    result += '  ';
+
+    for (let x = 0; x < grid[y].length; x++) {
+      result += ` ${toString(grid[y][x])}`;
+    }
+
+    result += `\n`;
+  }
+
+  console.info(result);
+}

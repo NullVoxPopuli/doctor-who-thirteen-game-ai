@@ -9,6 +9,14 @@ import type { DirectionKey } from './consts';
 // iife();
 import './rnn/vendor/app.map-worker-edition';
 
+export function highestValue(game: Game2048) {
+  return Math.max(
+    ...game.grid.cells.flat().map((cell) => {
+      return cell?.value || 0;
+    })
+  );
+}
+
 export function executeMove(gameManager: Game2048, move: DirectionKey, skipNewTile = false) {
   let internalMove = MOVE_KEY_MAP[move];
 

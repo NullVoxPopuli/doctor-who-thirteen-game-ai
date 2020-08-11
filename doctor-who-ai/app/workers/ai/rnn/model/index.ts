@@ -17,7 +17,7 @@ export class Model {
   }
 
   fit(gameState: tf.Tensor, rankedMoves: tf.Tensor) {
-    return this.model.fit([gameState, gameState], rankedMoves);
+    return this.model.fit(gameState, rankedMoves);
   }
 
   /**
@@ -37,7 +37,7 @@ export class Model {
   predict(inputs: tf.Tensor) {
     // expandDims converts regular inputs into batch inputs
     let inputData = inputs.expandDims();
-    let output = tf.tidy(() => this.model.predict([inputData, inputData]));
+    let output = tf.tidy(() => this.model.predict(inputData));
 
     return output;
   }
