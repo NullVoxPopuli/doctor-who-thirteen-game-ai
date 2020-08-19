@@ -139,7 +139,7 @@ export class QLearn {
 
     let lossFunction = () =>
       tf.tidy(() => {
-        let states = tf.tensor(batch.map(([state]) => state)).reshape([batch.length, 4, 4, 1]);
+        let states = getStateTensor(batch.map(([state]) => state));
         let actions = tf.tensor1d(
           batch.map(([, action]) => action),
           'int32'
@@ -151,9 +151,9 @@ export class QLearn {
           .sum(-1);
 
         let rewards = tf.tensor1d(batch.map(([, , reward]) => reward));
-        let nextStates = tf
-          .tensor(batch.map(([, , , nextState]) => nextState || tf.zeros([this.config.numInputs])))
-          .reshape([batch.length, 4, 4, 1]);
+        let nextStates = getStateTensor(
+          batch.map(([, , , nextState]) => nextState || tf.zeros([this.config.numInputs]))
+        );
 
         let nextMaxQ = this.targetNetwork.predict(nextStates).max(-1);
 
@@ -175,4 +175,25 @@ export class QLearn {
 
     tf.dispose(gradients);
   }
+}
+
+function getStateTensor(state: tf.Tensor | tf.Tensor[]) {
+  if (!Array.isArray(state)) {
+    state = [state];
+  }
+
+  const numExamples = state.length;
+
+  // TODO(cais): Maintain only a single buffer for efficiency.
+  const buffer = tf.buffer([numExamples, 4, 4, 1]);
+
+  for (let n = 0; n < numExamples; ++n) {
+    if (state[n] == null) {
+      continue;
+    }
+
+    buffer.set(n, ...state[n].dataSync());
+  }
+
+  return buffer.toTensor();
 }
