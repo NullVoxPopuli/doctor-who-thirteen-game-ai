@@ -1,4 +1,5 @@
-import tf, { AdamOptimizer } from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs';
+import { AdamOptimizer } from '@tensorflow/tfjs';
 import random from 'random';
 
 import { QLearn } from './learning/qlearn';
@@ -25,8 +26,6 @@ const defaultConfig = {
   learningRate: 0.95,
   numActions: 4,
   numInputs: 16,
-  inputShape: [16],
-  gameMemorySize: 500,
   moveMemorySize: 10000,
 };
 
@@ -159,6 +158,8 @@ export class GameTrainer {
       trainingStats.totalInvalid += result.numInvalidSteps;
       trainingStats.averageScore = trainingStats.totalScore / numberOfGames;
       trainingStats.averageMoves = trainingStats.totalMoves / numberOfGames;
+
+      console.debug(scores.length, numberOfGames);
 
       if (scores.length % numberOfGames === 0) {
         console.time('Learning');

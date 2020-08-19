@@ -35,8 +35,8 @@ export async function trainBatch() {
   await ensureNetwork();
 
   let games = 0;
-  let batches = 30000;
-  let gamesPerBatch = 50;
+  let batches = 300;
+  let gamesPerBatch = 10;
   let total = batches * gamesPerBatch;
 
   for (let i = 0; i < batches; i++) {

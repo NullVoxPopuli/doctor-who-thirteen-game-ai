@@ -132,30 +132,31 @@ export class QLearn {
   async learn<Prediction extends tf.Tensor<tf.Rank>[] | tf.Tensor<tf.Rank>>(
     learningConfig: LearningConfig<Prediction>
   ) {
+    let { reshapeState, gamma, batchSize, optimizer } = learningConfig;
+
     // Get a batch of examples from the replay buffer
     let batch = this.actionMemory.recallRandomly(batchSize);
 
-    let { reshapeState, gamma, batchSize, optimizer } = learningConfig;
-
-    let { learningRate, learningDiscount } = this.config;
-
     let lossFunction = () =>
       tf.tidy(() => {
-        let states = batch.map(([state]) => reshapeState(state));
+        let states = tf.tensor(batch.map(([state]) => state)).reshape([batch.length, 4, 4, 1]);
         let actions = tf.tensor1d(
           batch.map(([, action]) => action),
           'int32'
         );
+
         let qs = this.onlineNetwork
           .apply(states, { training: true })
           .mul(tf.oneHot(actions, this.config.numActions))
           .sum(-1);
 
         let rewards = tf.tensor1d(batch.map(([, , reward]) => reward));
-        let nextStates = batch.map(
-          ([, , , nextState]) => nextState || tf.zeros([this.config.numInputs])
-        );
+        let nextStates = tf
+          .tensor(batch.map(([, , , nextState]) => nextState || tf.zeros([this.config.numInputs])))
+          .reshape([batch.length, 4, 4, 1]);
+
         let nextMaxQ = this.targetNetwork.predict(nextStates).max(-1);
+
         let doneMask = tf
           .scalar(1)
           .sub(tf.tensor1d(batch.map(([, , , , done]) => done)).asType('float32'));

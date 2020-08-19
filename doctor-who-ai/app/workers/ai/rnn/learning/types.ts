@@ -14,9 +14,6 @@ export interface Config {
    */
   numInputs: number;
 
-  // TODO: document
-  inputShape: number[];
-
   /**
    * (starting) chance of random action. Range: [0, 1]
    */
