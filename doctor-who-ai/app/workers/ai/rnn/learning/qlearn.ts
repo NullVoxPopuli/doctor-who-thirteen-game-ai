@@ -14,55 +14,56 @@ interface RequiredRewardInfo {
 }
 
 type Maybe<T> = T | undefined;
-type ActionMemory = [tf.Tensor, number, number, Maybe<tf.Tensor>];
-
-interface GameMemory {
-  score: number;
-  moves: number;
-  highestValue: number;
-  totalReward: number;
-  moveMemory: Memory<ActionMemory>;
-}
+type ActionMemory = [tf.Tensor, number, number, Maybe<tf.Tensor>, boolean];
 
 type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo> = {
   game: Game;
   getState: (game: Game) => State;
   isGameOver: (game: Game) => boolean;
-  getRankedActions: (game: Game, state: State, useExternalAction: boolean) => Action[];
+  getRankedActions: (
+    game: Game,
+    state: State,
+    useExternalAction: boolean,
+    onlineNetwork: tf.LayersModel
+  ) => Action[];
   takeAction: (game: Game, action: Action) => void;
   getReward: (game: Game, action: Action) => RewardInfo;
   isValidAction: (rewardInfo: RewardInfo) => boolean;
-  afterGame: (gameInfo: {
-    game: Game;
-    totalReward: number;
-    moveMemory: Memory<ActionMemory>;
-  }) => Promise<void>;
+  afterGame: (gameInfo: { game: Game }) => Promise<void>;
 };
 
-type LearningConfig<Prediction> = {
+type LearningConfig = {
   reshapeState: (state: tf.Tensor) => tf.Tensor;
-  predict: (input: tf.Tensor) => Prediction;
-  fit: (inputs: tf.Tensor, outputs: tf.Tensor) => Promise<tf.History>;
+  gamma: number;
+  batchSize: number;
+  optimizer: tf.Optimizer;
 };
+
+interface NetworkArgs {
+  network: tf.LayersModel;
+  createNetwork: () => tf.LayersModel;
+}
 
 export class QLearn {
-  declare gameMemory: Memory<GameMemory>;
+  declare actionMemory: Memory<ActionMemory>;
   declare config: Required<Config>;
+
+  declare onlineNetwork: tf.LayersModel;
+  declare targetNetwork: tf.LayersModel;
 
   playCount = 0;
 
-  constructor(config: Config) {
+  constructor(config: Config, { network, createNetwork }: NetworkArgs) {
     this.config = {
       maxEpsilon: 0.9,
       minEpsilon: 0.001,
       epsilonDecaySpeed: 0.00001,
       ...config,
     };
-    this.gameMemory = new Memory<GameMemory>(
-      config.gameMemorySize,
-      0.025,
-      (via) => via.totalReward
-    );
+    this.actionMemory = new Memory<ActionMemory>(this.config.moveMemorySize);
+
+    this.targetNetwork = network;
+    this.onlineNetwork = createNetwork();
   }
 
   decayEpsilon(iterations: number) {
@@ -85,8 +86,6 @@ export class QLearn {
       isValidAction,
     } = lessonConfig;
 
-    let moveMemory = new Memory<ActionMemory>(this.config.moveMemorySize);
-
     let totalReward = 0;
     let numSteps = 0;
     let numInvalidSteps = 0;
@@ -95,16 +94,17 @@ export class QLearn {
       let inputs = getState(game);
 
       let useExternalAction = Math.random() < this.config.epsilon;
-      let rankedActions = getRankedActions(game, inputs, useExternalAction);
+      let rankedActions = getRankedActions(game, inputs, useExternalAction, this.onlineNetwork);
 
       let action: Action | undefined;
 
       // explore the move space a little more than just playind would allow
       for (let possibleAction of rankedActions) {
         let rewardInfo = getReward(game, possibleAction);
-        let nextState = isGameOver(game) ? undefined : rewardInfo.nextState;
+        let isDone = isGameOver(game);
+        let nextState = isDone ? undefined : rewardInfo.nextState;
 
-        moveMemory.add([inputs, possibleAction, rewardInfo.reward, nextState]);
+        this.actionMemory.add([inputs, possibleAction, rewardInfo.reward, nextState, isDone]);
 
         if (!action && isValidAction(rewardInfo)) {
           action = possibleAction;
@@ -121,14 +121,7 @@ export class QLearn {
       this.playCount++;
     }
 
-    await lessonConfig.afterGame({ game, totalReward, moveMemory });
-    // this.gameMemory.add({
-    //   totalReward,
-    //   moveMemory,
-    //   score: game.score,
-    //   moves: numSteps,
-    //   highestValue: highestValue(game),
-    // });
+    await lessonConfig.afterGame({ game });
 
     return {
       numSteps,
@@ -139,81 +132,46 @@ export class QLearn {
   async learn<Prediction extends tf.Tensor<tf.Rank>[] | tf.Tensor<tf.Rank>>(
     learningConfig: LearningConfig<Prediction>
   ) {
-    // let games: GameMemory[] = this.gameMemory.recallRandomly(300);
-    let games = this.gameMemory
-      .recallTopBy((item) => item.score, 0.5)
-      .sort((a, z) => z.score - a.score);
+    // Get a batch of examples from the replay buffer
+    let batch = this.actionMemory.recallRandomly(batchSize);
 
-    let bestReward = Math.max(...games.filter((game) => game.score));
-
-    for (let game of games) {
-      let weight = game.score / bestReward;
-
-      await this.learnFromGame(game, learningConfig, weight);
-    }
-  }
-
-  async learnFromGame<Prediction extends tf.Tensor<tf.Rank>[] | tf.Tensor<tf.Rank>>(
-    game: GameMemory,
-    learningConfig: LearningConfig<Prediction>,
-    gameWeight?: number
-  ) {
-    let { reshapeState, predict, fit } = learningConfig;
+    let { reshapeState, gamma, batchSize, optimizer } = learningConfig;
 
     let { learningRate, learningDiscount } = this.config;
 
-    // Sample from memory
-    const batch = game.moveMemory.recallRandomly(200);
+    let lossFunction = () =>
+      tf.tidy(() => {
+        let states = batch.map(([state]) => reshapeState(state));
+        let actions = tf.tensor1d(
+          batch.map(([, action]) => action),
+          'int32'
+        );
+        let qs = this.onlineNetwork
+          .apply(states, { training: true })
+          .mul(tf.oneHot(actions, this.config.numActions))
+          .sum(-1);
 
-    let x: TypedArray[] = [];
-    let y: number[] = [];
+        let rewards = tf.tensor1d(batch.map(([, , reward]) => reward));
+        let nextStates = batch.map(
+          ([, , , nextState]) => nextState || tf.zeros([this.config.numInputs])
+        );
+        let nextMaxQ = this.targetNetwork.predict(nextStates).max(-1);
+        let doneMask = tf
+          .scalar(1)
+          .sub(tf.tensor1d(batch.map(([, , , , done]) => done)).asType('float32'));
 
-    // Update the states rewards with the discounted next states rewards
-    batch.forEach(([state, action, reward, nextState], index) => {
-      let predictionForState = predict(reshapeState(state));
-      let predictionForNextState = predict(
-        reshapeState(nextState || tf.zeros([this.config.numInputs]))
-      );
+        let targetQs = rewards.add(nextMaxQ.mul(doneMask).mul(gamma));
 
-      let inputs = state.dataSync();
-      let qsa = predictionForState.dataSync();
-      let nextQsaMax = predictionForNextState.max();
+        return tf.losses.meanSquaredError(targetQs, qs);
+      });
 
-      if (nextState) {
-        // Q[s,a] = Q[s,a] + lr*(r + y*np.max(Q[s1,:]) - Q[s,a])
-        qsa[action] =
-          qsa[action] + learningRate * (reward + learningDiscount * nextQsaMax - qsa[action]);
-      } else {
-        qsa[action] = reward;
-      }
+    // Calculate the gradients of the loss function with respect to the weights
+    // of the online DQN
+    let gradients = tf.variableGrads(lossFunction);
 
-      if (gameWeight) {
-        qsa[action] *= gameWeight;
-      }
+    // Use the gradients to update the online DQN's weights.
+    optimizer.applyGradients(gradients.grads);
 
-      for (let i = 0; i < this.config.numActions; i++) {
-        if (i === action) {
-          continue;
-        }
-
-        qsa[i] = 0;
-      }
-
-      x.push(inputs);
-      y.push(qsa);
-
-      predictionForState.dispose();
-      predictionForNextState.dispose();
-    });
-
-    // Reshape the batches to be fed to the network
-    let inputs = tf.tensor(x, [x.length, 4, 4, 1]);
-    let outputs = tf.tensor(y, [y.length, this.config.numActions]);
-
-    // Learn the Q(s, a) values given associated discounted rewards
-    await fit(inputs, outputs);
-
-    inputs.dispose();
-    outputs.dispose();
+    tf.dispose(gradients);
   }
 }

@@ -43,6 +43,14 @@ export class Model {
   }
 }
 
+export function act(network: tf.LayersModel, inputs: tf.Tensor) {
+  let inputData = inputs.expandDims();
+  let prediction = tf.tidy(() => network.predict(inputData));
+  let ranked = (prediction as tf.Tensor<tf.Rank>).dataSync();
+
+  return moveInfoFor(ranked);
+}
+
 function moveInfoFor(weights: NumberArray) {
   let sorted = sortedMoves(weights);
 

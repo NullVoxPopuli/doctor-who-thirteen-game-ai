@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-import { useGPU, getNetwork, save } from './model/tf-utils';
+import { useGPU, getNetwork, createNetwork, save } from './model/tf-utils';
 import { GameTrainer } from './game-trainer';
 
 let network!: tf.LayersModel;
@@ -21,18 +21,9 @@ export async function getMove(game: GameState) {
 async function ensureNetwork() {
   if (!network) {
     network = await getNetwork();
-    agent = new GameTrainer(network, {
-      epsilon: 0.05,
-      minEpsilon: 0.0001,
-      maxEpsilon: 0.05,
-      epsilonDecaySpeed: 0.05,
-      learningDiscount: 0.95,
-      learningRate: 0.95,
-      numActions: 4,
-      numInputs: 16,
-      inputShape: [16],
-      gameMemorySize: 500,
-      moveMemorySize: 10000,
+    agent = new GameTrainer({
+      network,
+      createNetwork,
     });
   }
 }

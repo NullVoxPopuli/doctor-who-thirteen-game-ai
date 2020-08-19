@@ -1,4 +1,4 @@
-import tf from '@tensorflow/tfjs';
+import tf, { AdamOptimizer } from '@tensorflow/tfjs';
 import random from 'random';
 
 import { QLearn } from './learning/qlearn';
@@ -9,15 +9,25 @@ import type { DirectionKey, InternalMove } from '../consts';
 import { ALL_MOVES } from '../consts';
 import { clone, groupByValue, gameToTensor, isEqual, printGame } from './utils';
 import { imitateMove, executeMove, fakeGameFrom } from '../game';
-import { Model } from './model';
-import { guidedMove } from '../a-star';
+import { Model, act } from './model';
 
 import type { GameManager } from 'ai/rnn/vendor/app.map-worker-edition';
 
 const defaultConfig = {
-  minEpsilon: 0.001,
-  maxEpsilon: 0.1,
-  epsilonDecaySpeed: 0.1,
+  // minEpsilon: 0.001,
+  // maxEpsilon: 0.1,
+  // epsilonDecaySpeed: 0.1,
+  epsilon: 0.05,
+  minEpsilon: 0.0001,
+  maxEpsilon: 0.05,
+  epsilonDecaySpeed: 0.05,
+  learningDiscount: 0.95,
+  learningRate: 0.95,
+  numActions: 4,
+  numInputs: 16,
+  inputShape: [16],
+  gameMemorySize: 500,
+  moveMemorySize: 10000,
 };
 
 type RewardInfo = {
@@ -33,22 +43,34 @@ type RewardInfo = {
 
 let lastMove = -1;
 
+interface Args {
+  network: tf.LayersModel;
+  createNetwork: () => tf.LayersModel;
+}
+
 export class GameTrainer {
   declare config: Required<Config>;
-  declare model: Model;
+  declare target: Model;
   declare qlearn: QLearn;
   declare gameQueue: GameManager[];
 
-  constructor(network: tf.LayersModel, config: Config) {
-    this.config = { ...defaultConfig, ...config };
-    this.model = new Model(network);
-    this.qlearn = new QLearn(config);
+  declare optimizer: AdamOptimizer;
+
+  constructor({ network, createNetwork }: Args) {
+    this.config = { ...defaultConfig };
+    this.target = new Model(network);
+
+    this.target.model.trainable = false;
+
+    this.optimizer = tf.train.adam(this.config.learningRate);
+
+    this.qlearn = new QLearn(this.config, { createNetwork, network });
     this.gameQueue = [];
   }
 
   async getMove(game: GameState): Promise<any> {
     let inputs = gameToTensor(game);
-    let moveInfo = this.model.act(reshape(inputs));
+    let moveInfo = this.target.act(reshape(inputs));
     let validMove = firstValidMoveOf(moveInfo.sorted, game);
 
     let move = ALL_MOVES[validMove];
@@ -91,7 +113,7 @@ export class GameTrainer {
         isValidAction: (rewardInformation) => rewardInformation.wasMoved,
         getReward: (game, action) => moveAndCalculateReward(action, game),
         takeAction: (game, action) => executeMove(game, ALL_MOVES[action]),
-        getRankedActions: (game, state, useExternalAction) => {
+        getRankedActions: (game, state, useExternalAction, onlineNetwork) => {
           let moveInfo;
 
           // if we're approaching new territory, let's introduce some randomness
@@ -107,7 +129,7 @@ export class GameTrainer {
               moveInfo.sorted.push(moveInfo.sorted.shift() || 0);
             }
           } else {
-            moveInfo = this.model.act(state);
+            moveInfo = act(onlineNetwork, state);
             lastMove = moveInfo.sorted[0];
           }
 
@@ -115,22 +137,16 @@ export class GameTrainer {
             let [, secondBestAction, third, fourth] = moveInfo.sorted;
 
             this.gameQueue.unshift(forkGameWithAction(game, secondBestAction));
-            this.gameQueue.unshift(forkGameWithAction(game, third));
-            this.gameQueue.unshift(forkGameWithAction(game, fourth));
+            // this.gameQueue.unshift(forkGameWithAction(game, third));
+            // this.gameQueue.unshift(forkGameWithAction(game, fourth));
           }
 
           return moveInfo.sorted;
         },
         afterGame: async (gameInfo) => {
-          console.log(
+          console.debug(
             `Finished game ${scores.length} with ${gameInfo.game.score}. ${this.gameQueue.length} remaining`
           );
-
-          await this.qlearn.learnFromGame(gameInfo, {
-            reshapeState: (state) => reshape(state),
-            predict: (input) => this.model.predict(input),
-            fit: (inputs, outputs) => this.model.fit(inputs, outputs),
-          });
         },
       });
 
@@ -144,17 +160,18 @@ export class GameTrainer {
       trainingStats.averageScore = trainingStats.totalScore / numberOfGames;
       trainingStats.averageMoves = trainingStats.totalMoves / numberOfGames;
 
-      // if (scores.length % this.config.gameMemorySize === 0) {
-      //   console.time('Learning');
-      //   await this.qlearn.learn({
-      //     reshapeState: (state) => reshape(state),
-      //     predict: (input) => this.model.predict(input),
-      //     fit: (inputs, outputs) => this.model.fit(inputs, outputs),
-      //   });
-      //   console.timeEnd('Learning');
-      // }
-
       if (scores.length % numberOfGames === 0) {
+        console.time('Learning');
+
+        this.qlearn.learn({
+          reshapeState: reshape,
+          gamma: 0.9,
+          batchSize: 200,
+          optimizer: this.optimizer,
+        });
+
+        console.timeEnd('Learning');
+
         break;
       }
 
@@ -163,7 +180,7 @@ export class GameTrainer {
 
     trainingStats.averageInvalid = trainingStats.totalInvalid / numberOfGames;
 
-    console.log('# Games: ', scores.length);
+    console.debug('# Games: ', scores.length);
 
     return { ...trainingStats, epsilon: this.qlearn.config.epsilon };
   }
