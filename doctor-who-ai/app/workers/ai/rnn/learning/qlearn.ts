@@ -5,20 +5,19 @@ import { Memory } from './memory';
 import { decayEpsilon } from './utils';
 
 import type { Config } from './types';
-import { TypedArray } from '@tensorflow/tfjs';
-import { highestValue } from '../../game';
+import { copyWeights } from '../model/tf-utils';
 
-interface RequiredRewardInfo {
-  nextState: tf.Tensor;
+interface RequiredRewardInfo<State> {
+  nextState: State;
   reward: number;
 }
 
 type Maybe<T> = T | undefined;
-type ActionMemory = [tf.Tensor, number, number, Maybe<tf.Tensor>, boolean];
 
-type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo> = {
+type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo<State>> = {
   game: Game;
   getState: (game: Game) => State;
+  getStateTensor: (state: State) => tf.Tensor;
   isGameOver: (game: Game) => boolean;
   getRankedActions: (
     game: Game,
@@ -29,11 +28,12 @@ type LessonConfig<Game, State, Action, RewardInfo extends RequiredRewardInfo> = 
   takeAction: (game: Game, action: Action) => void;
   getReward: (game: Game, action: Action) => RewardInfo;
   isValidAction: (rewardInfo: RewardInfo) => boolean;
-  afterGame: (gameInfo: { game: Game }) => Promise<void>;
+  afterGame?: (gameInfo: { game: Game }) => Promise<void>;
+  learnPeriodically?: LearningConfig<State>;
 };
 
-type LearningConfig = {
-  reshapeState: (state: tf.Tensor) => tf.Tensor;
+type LearningConfig<State> = {
+  getStateTensor: (state: State) => tf.Tensor;
   gamma: number;
   batchSize: number;
   optimizer: tf.Optimizer;
@@ -44,8 +44,8 @@ interface NetworkArgs {
   createNetwork: () => tf.LayersModel;
 }
 
-export class QLearn {
-  declare actionMemory: Memory<ActionMemory>;
+export class QLearn<State> {
+  declare actionMemory: Memory<[State, number, number, Maybe<State>, boolean]>;
   declare config: Required<Config>;
 
   declare onlineNetwork: tf.LayersModel;
@@ -60,22 +60,25 @@ export class QLearn {
       epsilonDecaySpeed: 0.00001,
       ...config,
     };
-    this.actionMemory = new Memory<ActionMemory>(this.config.moveMemorySize);
+    this.actionMemory = new Memory(this.config.moveMemorySize);
 
     this.targetNetwork = network;
+    this.targetNetwork.trainable = false;
     this.onlineNetwork = createNetwork();
+
+    // this.onlineNetwork.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+
+    // Copy weights to our online network
+    copyWeights(this.onlineNetwork, this.targetNetwork);
   }
 
   decayEpsilon(iterations: number) {
     this.config.epsilon = decayEpsilon(this.config, iterations);
   }
 
-  async playOnce<
-    Game,
-    State extends tf.Tensor,
-    Action extends number,
-    RewardInfo extends RequiredRewardInfo
-  >(lessonConfig: LessonConfig<Game, State, Action, RewardInfo>) {
+  async playOnce<Game, Action extends number, RewardInfo extends RequiredRewardInfo<State>>(
+    lessonConfig: LessonConfig<Game, State, Action, RewardInfo>
+  ) {
     let {
       game,
       isGameOver,
@@ -91,10 +94,10 @@ export class QLearn {
     let numInvalidSteps = 0;
 
     while (!isGameOver(game)) {
-      let inputs = getState(game);
+      let state = getState(game);
 
       let useExternalAction = Math.random() < this.config.epsilon;
-      let rankedActions = getRankedActions(game, inputs, useExternalAction, this.onlineNetwork);
+      let rankedActions = getRankedActions(game, state, useExternalAction, this.onlineNetwork);
 
       let action: Action | undefined;
 
@@ -104,35 +107,55 @@ export class QLearn {
         let isDone = isGameOver(game);
         let nextState = isDone ? undefined : rewardInfo.nextState;
 
-        this.actionMemory.add([inputs, possibleAction, rewardInfo.reward, nextState, isDone]);
+        this.actionMemory.add([state, possibleAction, rewardInfo.reward, nextState, isDone]);
 
-        if (!action && isValidAction(rewardInfo)) {
+        // if (!action && isValidAction(rewardInfo)) {
+        //   action = possibleAction;
+        //   totalReward += rewardInfo.reward;
+        //   break;
+        // } else if (!action) {
+        //   numInvalidSteps++;
+        // }
+
+        if (!isValidAction(rewardInfo)) {
+          numInvalidSteps++;
+        }
+
+        if (!action) {
           action = possibleAction;
           totalReward += rewardInfo.reward;
           break;
-        } else if (!action) {
-          numInvalidSteps++;
         }
+
+        // harshly punish repeated failure
+        break;
       }
 
       takeAction(game, action || rankedActions[0]);
+
+      if (lessonConfig.learnPeriodically && numSteps % 1000 === 0) {
+        console.time('Learning');
+        await this.learn(lessonConfig.learnPeriodically);
+        console.timeEnd('Learning');
+      }
 
       numSteps++;
       this.playCount++;
     }
 
-    await lessonConfig.afterGame({ game });
+    if (lessonConfig.afterGame) {
+      await lessonConfig.afterGame({ game });
+    }
 
     return {
+      totalReward,
       numSteps,
       numInvalidSteps,
     };
   }
 
-  async learn<Prediction extends tf.Tensor<tf.Rank>[] | tf.Tensor<tf.Rank>>(
-    learningConfig: LearningConfig<Prediction>
-  ) {
-    let { reshapeState, gamma, batchSize, optimizer } = learningConfig;
+  async learn(learningConfig: LearningConfig<State>) {
+    let { getStateTensor, gamma, batchSize, optimizer } = learningConfig;
 
     // Get a batch of examples from the replay buffer
     let batch = this.actionMemory.recallRandomly(batchSize);
@@ -151,17 +174,16 @@ export class QLearn {
           .sum(-1);
 
         let rewards = tf.tensor1d(batch.map(([, , reward]) => reward));
-        let nextStates = getStateTensor(
-          batch.map(([, , , nextState]) => nextState || tf.zeros([this.config.numInputs]))
-        );
+        let nextStates = getStateTensor(batch.map(([, , , nextState]) => nextState));
 
+        // todo: targetnetwork
         let nextMaxQ = this.targetNetwork.predict(nextStates).max(-1);
 
         let doneMask = tf
           .scalar(1)
           .sub(tf.tensor1d(batch.map(([, , , , done]) => done)).asType('float32'));
 
-        let targetQs = rewards.add(nextMaxQ.mul(doneMask).mul(gamma));
+        let targetQs = rewards.add(nextMaxQ.mul(doneMask).mul(this.config.learningDiscount));
 
         return tf.losses.meanSquaredError(targetQs, qs);
       });
@@ -175,25 +197,4 @@ export class QLearn {
 
     tf.dispose(gradients);
   }
-}
-
-function getStateTensor(state: tf.Tensor | tf.Tensor[]) {
-  if (!Array.isArray(state)) {
-    state = [state];
-  }
-
-  const numExamples = state.length;
-
-  // TODO(cais): Maintain only a single buffer for efficiency.
-  const buffer = tf.buffer([numExamples, 4, 4, 1]);
-
-  for (let n = 0; n < numExamples; ++n) {
-    if (state[n] == null) {
-      continue;
-    }
-
-    buffer.set(n, ...state[n].dataSync());
-  }
-
-  return buffer.toTensor();
 }

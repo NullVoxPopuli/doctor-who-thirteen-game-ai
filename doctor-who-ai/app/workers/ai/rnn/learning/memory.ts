@@ -36,7 +36,7 @@ export class Memory<T> {
   }
 
   recallRandomly(count: number) {
-    return sample(this.#memory, count);
+    return sample<T>(this.#memory, count);
   }
 
   recallTopBy(getter: (item: T) => number, percent = 0.1) {
@@ -48,8 +48,8 @@ export class Memory<T> {
   }
 }
 
-function sample(arr: unknown[], count: number) {
-  let results = [];
+function sample<T>(arr: T[], count: number) {
+  let results: T[] = [];
   let previousIndicies: number[] = [];
 
   while (results.length < count && results.length !== arr.length) {

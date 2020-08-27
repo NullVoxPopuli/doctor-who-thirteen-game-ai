@@ -20,13 +20,13 @@ const defaultConfig = {
   // epsilonDecaySpeed: 0.1,
   epsilon: 0.05,
   minEpsilon: 0.0001,
-  maxEpsilon: 0.05,
+  maxEpsilon: 0.8,
   epsilonDecaySpeed: 0.05,
   learningDiscount: 0.95,
   learningRate: 0.95,
   numActions: 4,
   numInputs: 16,
-  moveMemorySize: 10000,
+  moveMemorySize: 1000,
 };
 
 type RewardInfo = {
@@ -37,7 +37,7 @@ type RewardInfo = {
   previousScore: number;
   over: boolean;
   won: boolean;
-  nextState: tf.Tensor2D;
+  nextState: Game2048;
 };
 
 let lastMove = -1;
@@ -50,7 +50,7 @@ interface Args {
 export class GameTrainer {
   declare config: Required<Config>;
   declare target: Model;
-  declare qlearn: QLearn;
+  declare qlearn: QLearn<Game2048>;
   declare gameQueue: GameManager[];
 
   declare optimizer: AdamOptimizer;
@@ -59,17 +59,17 @@ export class GameTrainer {
     this.config = { ...defaultConfig };
     this.target = new Model(network);
 
-    this.target.model.trainable = false;
+    network.trainable = false;
 
-    this.optimizer = tf.train.adam(this.config.learningRate);
+    this.optimizer = tf.train.adam(0.01);
 
-    this.qlearn = new QLearn(this.config, { createNetwork, network });
+    this.qlearn = new QLearn<Game2048>(this.config, { createNetwork, network });
     this.gameQueue = [];
   }
 
   async getMove(game: GameState): Promise<any> {
-    let inputs = gameToTensor(game);
-    let moveInfo = this.target.act(reshape(inputs));
+    let inputs = getStateTensor(game);
+    let moveInfo = act(this.target.model, inputs);
     let validMove = firstValidMoveOf(moveInfo.sorted, game);
 
     let move = ALL_MOVES[validMove];
@@ -78,13 +78,15 @@ export class GameTrainer {
     return { move, rewardInfo };
   }
 
-  async train(_: GameState, numberOfGames = 1) {
+  async train(numberOfGames = 1) {
     let scores = [];
     let trainingStats = {
       totalMoves: 0,
       totalInvalid: 0,
       totalScore: 0,
+      totalReward: 0,
       averageScore: 0,
+      averageReward: 0,
       averageMoves: 0,
       medianScore: 0,
       averageInvalid: 0,
@@ -103,17 +105,21 @@ export class GameTrainer {
     let gameManager = this.gameQueue.pop();
 
     while (gameManager) {
-      printGame(gameManager);
+      if ((globalThis as any).printGames) {
+        printGame(gameManager);
+      }
 
-      let result = await this.qlearn.playOnce<GameManager, tf.Tensor2D, InternalMove, RewardInfo>({
+      let result = await this.qlearn.playOnce<GameManager, InternalMove, RewardInfo>({
         game: gameManager,
-        getState: (game) => reshape(gameToTensor(game)),
+        getState: (game) => game.serialize(),
+        getStateTensor: getStateTensor,
         isGameOver: (game) => game.over,
         isValidAction: (rewardInformation) => rewardInformation.wasMoved,
         getReward: (game, action) => moveAndCalculateReward(action, game),
         takeAction: (game, action) => executeMove(game, ALL_MOVES[action]),
         getRankedActions: (game, state, useExternalAction, onlineNetwork) => {
           let moveInfo;
+          let inputs = getStateTensor(state);
 
           // if we're approaching new territory, let's introduce some randomness
           // to make sure we fully explore the new space
@@ -121,57 +127,67 @@ export class GameTrainer {
           let useRandom = needsLearning && Math.random() < 0.5;
 
           if (useExternalAction || useRandom) {
-            // moveInfo = guidedMove(4, game);
             moveInfo = randomMoves(this.config.numActions);
 
             if (lastMove === moveInfo.sorted[0]) {
               moveInfo.sorted.push(moveInfo.sorted.shift() || 0);
             }
           } else {
-            moveInfo = act(onlineNetwork, state);
+            moveInfo = act(onlineNetwork, inputs);
             lastMove = moveInfo.sorted[0];
           }
 
-          if (this.gameQueue.length < 1000) {
-            let [, secondBestAction, third, fourth] = moveInfo.sorted;
+          // if (this.gameQueue.length < 100) {
+          //   let [, secondBestAction, third, fourth] = moveInfo.sorted;
 
-            this.gameQueue.unshift(forkGameWithAction(game, secondBestAction));
-            // this.gameQueue.unshift(forkGameWithAction(game, third));
-            // this.gameQueue.unshift(forkGameWithAction(game, fourth));
-          }
+          //   this.gameQueue.unshift(forkGameWithAction(game, secondBestAction));
+          //   this.gameQueue.unshift(forkGameWithAction(game, third));
+          //   this.gameQueue.unshift(forkGameWithAction(game, fourth));
+          // }
 
           return moveInfo.sorted;
         },
-        afterGame: async (gameInfo) => {
-          console.debug(
-            `Finished game ${scores.length} with ${gameInfo.game.score}. ${this.gameQueue.length} remaining`
-          );
+        learnPeriodically: {
+          getStateTensor,
+          gamma: 0.01,
+          batchSize: 200,
+          optimizer: this.optimizer,
         },
+        // afterGame: async (gameInfo) => {
+        //   console.debug(
+        //     `Finished game ${scores.length} with ${gameInfo.game.score}. ${this.gameQueue.length} remaining`
+        //   );
+        // },
       });
 
       scores.push(gameManager.score);
+      trainingStats.totalReward += result.totalReward;
       trainingStats.totalScore += gameManager.score;
-      trainingStats.bestScore = Math.max(trainingStats.bestScore, gameManager.score);
-      trainingStats.minScore = Math.min(trainingStats.minScore, gameManager.score);
-      trainingStats.medianScore = scores.sort()[Math.round((scores.length - 1) / 2)];
       trainingStats.totalMoves += result.numSteps;
       trainingStats.totalInvalid += result.numInvalidSteps;
+      trainingStats.averageReward = trainingStats.totalReward / numberOfGames;
       trainingStats.averageScore = trainingStats.totalScore / numberOfGames;
       trainingStats.averageMoves = trainingStats.totalMoves / numberOfGames;
 
-      console.debug(scores.length, numberOfGames);
+      trainingStats.bestScore = Math.max(...scores);
+      trainingStats.minScore = Math.min(...scores);
+      trainingStats.medianScore = scores.sort()[Math.round((scores.length - 1) / 2)];
+      trainingStats.averageInvalid = trainingStats.totalInvalid / numberOfGames;
 
       if (scores.length % numberOfGames === 0) {
-        console.time('Learning');
+        console.debug('# Games: ', scores.length);
+        console.table([trainingStats]);
 
-        this.qlearn.learn({
-          reshapeState: reshape,
-          gamma: 0.9,
-          batchSize: 200,
-          optimizer: this.optimizer,
-        });
+        // console.time('Learning');
 
-        console.timeEnd('Learning');
+        // await this.qlearn.learn({
+        //   getStateTensor,
+        //   gamma: 0.9,
+        //   batchSize: 200,
+        //   optimizer: this.optimizer,
+        // });
+
+        // console.timeEnd('Learning');
 
         break;
       }
@@ -179,11 +195,7 @@ export class GameTrainer {
       gameManager = this.gameQueue.pop();
     }
 
-    trainingStats.averageInvalid = trainingStats.totalInvalid / numberOfGames;
-
-    console.debug('# Games: ', scores.length);
-
-    return { ...trainingStats, epsilon: this.qlearn.config.epsilon };
+    return trainingStats;
   }
 }
 
@@ -193,10 +205,6 @@ function forkGameWithAction(game: GameManager, action: InternalMove) {
   executeMove(forkedGame, ALL_MOVES[action]);
 
   return forkedGame;
-}
-
-function reshape(tensor: tf.Tensor) {
-  return tensor.reshape([4, 4, 1]);
 }
 
 export function firstValidMoveOf(moveList: InternalMove[], game: GameState) {
@@ -228,7 +236,7 @@ export function moveAndCalculateReward(move: InternalMove, game: Game2048) {
     previousScore: previousGame.score,
     over: nextGame.over,
     won: nextGame.won,
-    nextState: gameToTensor(nextGame),
+    nextState: nextGame.serialize(),
   };
 
   if (!moveData.wasMoved) {
@@ -447,4 +455,38 @@ function randomMoves(numActions: number) {
   }
 
   return { sorted: result };
+}
+
+function getStateTensor(state: Game2048 | Game2048[]): tf.Tensor {
+  if (!Array.isArray(state)) {
+    state = [state];
+  }
+
+  const numExamples = state.length;
+
+  const buffer = tf.buffer([numExamples, 4, 4, 1]);
+
+  for (let n = 0; n < numExamples; ++n) {
+    let currentState = state[n];
+
+    if (!currentState) {
+      continue;
+    }
+
+    let cells = currentState.grid.cells;
+
+    for (let i = 0; i < cells.length; i++) {
+      for (let j = 0; j < cells.length; j++) {
+        let cell = cells[i][j];
+
+        let value = cell?.value || 0;
+        // convert power of 2 to the power that 2 is to
+        let k = value === 0 ? 0 : Math.log2(value);
+
+        buffer.set(k, n, i, j, 0);
+      }
+    }
+  }
+
+  return buffer.toTensor();
 }

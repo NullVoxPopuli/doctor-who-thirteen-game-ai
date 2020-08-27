@@ -35,18 +35,19 @@ export class Model {
   }
 
   predict(inputs: tf.Tensor) {
-    // expandDims converts regular inputs into batch inputs
-    let inputData = inputs.expandDims();
-    let output = tf.tidy(() => this.model.predict(inputData));
+    inputs.print();
+    let output = tf.tidy(() => this.model.predict(inputs));
 
     return output;
   }
 }
 
 export function act(network: tf.LayersModel, inputs: tf.Tensor) {
-  let inputData = inputs.expandDims();
-  let prediction = tf.tidy(() => network.predict(inputData));
-  let ranked = (prediction as tf.Tensor<tf.Rank>).dataSync();
+  let ranked;
+
+  tf.tidy(() => {
+    ranked = network.predict(inputs).argMax(-1).dataSync();
+  });
 
   return moveInfoFor(ranked);
 }
