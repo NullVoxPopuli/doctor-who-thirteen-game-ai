@@ -1,6 +1,7 @@
 // import Worker, { method } from '@skyrocketjs/worker';
 
 import * as rnn from './rnn';
+import * as astar from './a-star';
 import { run as random } from './random';
 
 // export default class AIWorker extends Worker {
@@ -27,6 +28,7 @@ type RnnMessage =
   | { type: 'rnn'; action: 'save'; data: never };
 
 type RandomMessage = { type: 'random'; action: 'get-move'; data: never };
+type AStarMessage = { type: 'a-star'; action: 'get-move'; data: GameState };
 
 type Message = RnnMessage | RandomMessage;
 
@@ -36,6 +38,8 @@ promiseWorker.register(({ type, action, data }: Message) => {
       return handleRnn(action, data);
     case 'random':
       return handleRandom(action);
+    case 'a-star':
+      return handleAStar(action, data);
     default:
       throw new Error(`Unknown message: ${type}`);
   }
@@ -55,4 +59,13 @@ function handleRnn(action: RnnMessage['action'], data: GameState) {
 
 function handleRandom(_action: RandomMessage['action']) {
   return random();
+}
+
+function handleAStar(action: AStarMessage['action'], data: GameState) {
+  switch(action) {
+    case 'get-move':
+      return astar.getMove(data);
+    default:
+      throw new Error(`Unknown action ${action}`);
+  }
 }

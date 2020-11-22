@@ -15,11 +15,13 @@ import { printGame } from 'doctor-who-ai/utils';
 export const BOT = {
   RNN: 'rnn',
   RANDOM: 'random',
+  ASTAR: 'a-star',
 } as const;
 
 export const OPTIONS = {
   [BOT.RNN]: 'Reinforcement Learning Neural Network',
   [BOT.RANDOM]: 'Random',
+  [BOT.ASTAR]: 'A*',
 } as const;
 
 export default class Bot extends Service {

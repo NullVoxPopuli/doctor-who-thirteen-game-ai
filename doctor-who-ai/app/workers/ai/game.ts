@@ -25,10 +25,10 @@ export function executeMove(gameManager: Game2048, move: DirectionKey, skipNewTi
   gameManager.move(internalMove, skipNewTile);
 }
 
-export function imitateMove(model: Game2048, move: DirectionKey) {
+export function imitateMove(model: Game2048, move: DirectionKey, skipNewTile = false) {
   let gameManager = fakeGameFrom(model);
 
-  executeMove(gameManager, move);
+  executeMove(gameManager, move, skipNewTile);
 
   let serialized = gameManager.serialize();
 

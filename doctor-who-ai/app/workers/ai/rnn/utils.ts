@@ -21,6 +21,33 @@ export const isEqual = (a: GameCells, b: GameCells) => {
   return true;
 };
 
+export const isNewGame = (game: GameState) => {
+  return gameTo1DArray(game).reduce((sum, cellValue) => (cellValue === 0 ? sum : sum + 1), 0) === 2;
+};
+
+export const emptySpaces = (game: GameState) => {
+  let result: { row: number; column: number }[] = [];
+
+  let gameGrid = game.grid.cells;
+
+  for (let x = 0; x < gameGrid.length; x++) {
+    let column = gameGrid[x];
+
+    for (let y = 0; y < column.length; y++) {
+      let value = column[y]?.value || 0;
+
+      if (value === 0) {
+        result.push({
+          row: y,
+          column: x,
+        });
+      }
+    }
+  }
+
+  return result;
+};
+
 export const gameTo1DArray = (game: GameState) => {
   return game.grid.cells.flat().map((cell) => (cell ? cell.value : 0));
 };
