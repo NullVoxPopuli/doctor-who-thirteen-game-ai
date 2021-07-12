@@ -1,12 +1,3 @@
-export const VALUE_MAP = {
-  /* eslint-disable prettier/prettier */
-  2:     1, 4:      2, 8:      3, 16:    4,
-  32:    5, 64:     6, 128:    7, 256:   8,
-  512:   9, 1024:  10, 2048:  11, 4096: 12,
-  8192: 13, 16384: 14, 32768: 15,
-  /* eslint-enable prettier/prettier */
-} as const;
-
 export const DOCTOR_NUMBER_MAP = {
   1: '01 - William Hartnell',
   2: '02 - Patrick Troughton',
@@ -22,6 +13,7 @@ export const DOCTOR_NUMBER_MAP = {
   12: '11 - Matt Smith',
   13: '12 - Peter Capaldi',
   14: '13 - Jodie Whittaker',
+  15: '14 - ???',
 } as const;
 
 type Index = keyof typeof DOCTOR_NUMBER_MAP;
@@ -32,9 +24,59 @@ export function biggestTile(game: Game2048) {
 
   let value = Math.max(...tiles) as Value;
 
-  return { value, num: VALUE_MAP[value] };
+  return { value, num: Math.log2(value) };
 }
 
 export function round(num: number) {
   return Math.round(num * 100) / 100;
+}
+
+export function printGame(game: GameState, useNum = false) {
+  let grid: number[][] = [];
+
+  let gameGrid = game.grid.cells;
+
+  for (let x = 0; x < gameGrid.length; x++) {
+    let column = gameGrid[x];
+
+    grid[x] = [];
+
+    for (let y = 0; y < column.length; y++) {
+      let value = gameGrid[y][x]?.value || 0;
+
+      if (useNum) {
+        value = value === 0 ? 0 : Math.log2(value);
+      }
+
+      grid[x][y] = value;
+    }
+  }
+
+  let max = Math.max(...grid.flat());
+  let width = `${max}`.length;
+
+  let toString = (num: number) => {
+    let result = `${num}`;
+    let existing = result.length;
+
+    for (let i = 0; i < width - existing; i++) {
+      result = ` ${result}`;
+    }
+
+    return result;
+  };
+
+  let result = `Game State:\n`;
+
+  for (let y = 0; y < grid.length; y++) {
+    result += '  ';
+
+    for (let x = 0; x < grid[y].length; x++) {
+      result += ` ${toString(grid[y][x])}`;
+    }
+
+    result += `\n`;
+  }
+
+  console.info(result);
 }

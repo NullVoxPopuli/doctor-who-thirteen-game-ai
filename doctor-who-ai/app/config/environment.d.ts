@@ -8,6 +8,8 @@ export default config;
  * since different ember addons can materialize new entries.
  */
 declare const config: {
+  isProduction: boolean;
+  isDevelopment: boolean;
   environment: any;
   modulePrefix: string;
   podModulePrefix: string;

@@ -5,8 +5,21 @@
     {{/each-in}}
   </select>
 
-  <button type='button' {{on 'click' this.start}}>Start</button>
-  <button type='button' {{on 'click' this.stop}}>Stop</button>
+  <button type='button' {{on 'click' this.toggleTrain}}>
+    {{#if this.bot.trainTask.isRunning}}
+      Stop Training
+    {{else}}
+      Train
+    {{/if}}
+  </button>
+
+  <button type='button' {{on 'click' this.togglePlay}}>
+    {{#if this.bot.gameLoop.isRunning}}
+      Stop Playing
+    {{else}}
+      Play
+    {{/if}}
+  </button>
 
   <label>
     <input type='checkbox' {{on 'click' this.toggleAutoRetry}}> Auto-Retry

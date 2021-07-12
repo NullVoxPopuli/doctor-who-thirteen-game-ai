@@ -18,14 +18,20 @@ export default class Game extends Service {
   }
 
   get state() {
-    return JSON.parse(localStorage.getItem('gameState'));
+    return JSON.parse(localStorage.getItem('gameState')) as GameState;
+  }
+
+  get duration() {
+    if (!this.startTime) return 0;
+
+    return new Date().getDate() - this.startTime;
   }
 
   @action
   snapshot() {
     return {
       score: this.score,
-      time: new Date().getDate() - this.startTime,
+      time: this.duration,
     };
   }
 
@@ -52,10 +58,10 @@ function topDoctorFor(game: Game2048) {
   return DOCTOR_NUMBER_MAP[biggest.num];
 }
 
-function simulateKeyPress(k) {
+function simulateKeyPress(k: DirectionKey) {
   const oEvent = document.createEvent('KeyboardEvent');
 
-  function defineConstantGetter(name, value) {
+  function defineConstantGetter(name: string, value: unknown) {
     Object.defineProperty(oEvent, name, {
       get() {
         return value;

@@ -28,9 +28,22 @@ const base = {
   rules: {
     'prefer-const': 'off', // const has misleading safety implications
     'getter-return': ['error', { allowImplicit: true }],
+    'no-unused-vars': 'off', // handled be typescript?
     'no-console': [
       'error',
-      { allow: ['debug', 'warn', 'error', 'info', 'group', 'groupEnd', 'groupCollapsed'] },
+      {
+        allow: [
+          'debug',
+          'warn',
+          'error',
+          'info',
+          'group',
+          'groupEnd',
+          'groupCollapsed',
+          'time',
+          'timeEnd',
+        ],
+      },
     ],
 
     'padding-line-between-statements': [
@@ -58,6 +71,7 @@ const typescript = {
 
     // prefer inference
     '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
 
     ...prettier.rules,
   },
@@ -75,6 +89,10 @@ module.exports = {
     {
       files: ['app/**/*.ts', 'types/**/*.d.ts'],
       ...typescript,
+      rules: {
+        ...base.rules,
+        ...typescript.rules,
+      },
     },
     {
       files: ['workers/**/*.js', 'workers/**/*.ts'],

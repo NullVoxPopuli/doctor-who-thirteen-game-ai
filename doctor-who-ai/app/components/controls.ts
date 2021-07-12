@@ -4,19 +4,21 @@ import { action } from '@ember/object';
 
 import { OPTIONS } from 'doctor-who-ai/services/bot';
 
+import type Bot from 'doctor-who-ai/services/bot';
+
 export default class Controls extends Component {
-  @service bot;
+  @service bot!: Bot;
 
   botOptions = OPTIONS;
 
   @action
-  start() {
-    this.bot.play();
+  toggleTrain() {
+    this.bot.toggleTraining();
   }
 
   @action
-  stop() {
-    this.bot.stop();
+  togglePlay() {
+    this.bot.togglePlay();
   }
 
   @action
